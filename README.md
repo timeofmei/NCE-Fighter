@@ -6,6 +6,8 @@ NCE Fighter 是一个面向多语言课文记忆训练的响应式 Web 项目。
 
 第一阶段文本导入与只读课文已实现，用户验收通过；当前处于修正中，刷新离开警告的回归超时待核查。当前提供英语文本导入、逐行校对、草稿保存与删除、确认只读和浏览器本地恢复；训练与文件识别在后续阶段接入。启动命令见[工程开发指南](doc/DEVELOPMENT.md#开发命令与验证)，操作验收及实际验证结果见[阶段 01](doc/stages/01-text-import.md)。
 
+第二阶段比较与逐句训练已审核并获实现授权，实施与验收安排见[阶段 02](doc/stages/02-sentence-training.md)，代码尚未开始。
+
 ## 项目文档
 
 - [产品需求](doc/PRODUCT_REQUIREMENTS.md)：目标、范围、流程与训练规则。
@@ -16,6 +18,7 @@ NCE Fighter 是一个面向多语言课文记忆训练的响应式 Web 项目。
 - [文档组织与开发流程](doc/DEVELOPMENT_WORKFLOW.md)：文档职责、阶段交付、审核与验收流程。
 - [工程开发指南](doc/DEVELOPMENT.md)：技术栈、目录、存储与开发验证方案。
 - [阶段 01：文本导入](doc/stages/01-text-import.md)：可运行交付、验收步骤、验证结果与待核查问题。
+- [阶段 02：比较与逐句训练](doc/stages/02-sentence-training.md)：已审核范围、实现授权、实施安排及用户验收步骤。
 - [协作与 Git 规则](AGENTS.md)：文件编辑、提交和合并要求。
 
 ## License
