@@ -134,7 +134,7 @@ export default function Library({ loaderData }: Route.ComponentProps) {
                             : `/lessons/${encodeURIComponent(item.id)}`
                         }
                       >
-                        {item.state === "draft" ? "继续校对" : "阅读课文"}
+                        {item.state === "draft" ? "继续编辑" : "阅读课文"}
                       </Button>
                       {item.state === "draft" && (
                         <DeleteDraft

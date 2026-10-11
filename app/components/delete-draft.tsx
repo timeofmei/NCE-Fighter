@@ -59,15 +59,12 @@ export function DeleteDraft({
         onClose={() => {
           if (!busy) setOpened(false);
         }}
-        title="删除草稿"
+        title={title || "未命名课文"}
         closeOnClickOutside={!busy}
         closeOnEscape={!busy}
         withCloseButton={!busy}
       >
         <Stack>
-          <Text fw={700} className="break-text">
-            {title || "未命名课文"}
-          </Text>
           <Text>
             {unsaved
               ? "草稿及当前未保存修改将被删除，无法恢复。"

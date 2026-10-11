@@ -198,13 +198,13 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
       }}
     >
       <Group justify="space-between">
-        <Title order={1}>导入与校对</Title>
+        <Title order={1}>导入</Title>
         <Button component={Link} to="/library" variant="subtle" disabled={busy}>
           返回课文库
         </Button>
       </Group>
       <Select
-        label="课文内容语言"
+        label="语言"
         placeholder="选择语言"
         data={registry
           .list()
@@ -216,14 +216,15 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
         value={form.languageId || null}
         onChange={(value) => change("languageId", value ?? "")}
         allowDeselect={false}
-        disabled={busy}
+        readOnly={busy}
         required
       />
       <TextInput
-        label="课文标题"
+        label="标题"
         placeholder="未命名课文"
         value={form.title}
-        disabled={!language || busy}
+        disabled={!language}
+        readOnly={busy}
         onChange={(event) => change("title", event.currentTarget.value)}
       />
       <Textarea
@@ -235,7 +236,8 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
         rows={12}
         wrap="off"
         value={form.body}
-        disabled={!language || busy}
+        disabled={!language}
+        readOnly={busy}
         dir={language?.textDirection ?? "ltr"}
         onChange={(event) => change("body", event.currentTarget.value)}
       />
@@ -291,7 +293,7 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
               if (!composition.current) setReview(true);
             }}
           >
-            确认并保存
+            保存为课文
           </Button>
           {hasSaved && (
             <DeleteDraft
@@ -323,7 +325,7 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
       >
         <Stack>
           <Text>
-            确认保存后不可修改标题、正文、语言及句子划分。课文保存在此浏览器，清除站点数据会丢失课文和草稿。
+            确认保存后不可修改内容。课文保存在此浏览器，清除数据会丢失课文和草稿。
           </Text>
           <Group>
             <Button
@@ -331,7 +333,7 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
               disabled={busy}
               onClick={() => setReview(false)}
             >
-              继续校对
+              继续编辑
             </Button>
             <Button
               loading={busy}

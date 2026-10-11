@@ -7,15 +7,15 @@ test("documented one-shot development fault supports read, draft save and confir
   await expect(page.getByRole("alert")).toContainText("已模拟一次存储失败");
   await page.getByRole("button", { name: "重试" }).click();
   await expect(page.getByText("还没有课文。", { exact: true })).toBeVisible();
-  for (const operation of ["保存草稿", "确认并保存"]) {
+  for (const operation of ["保存草稿", "保存为课文"]) {
     await page.goto("/import?storageFailure=once");
-    await page.getByRole("combobox", { name: "课文内容语言" }).click();
+    await page.getByRole("combobox", { name: "语言" }).click();
     await page.getByRole("option", { name: "英语", exact: true }).click();
     await page
       .getByRole("textbox", { name: "正文", exact: true })
       .fill("Retain this sentence.");
     await page.getByRole("button", { name: operation, exact: true }).click();
-    if (operation === "确认并保存")
+    if (operation === "保存为课文")
       await page.getByRole("button", { name: "确认保存", exact: true }).click();
     await expect(
       page.getByRole("alert").filter({ hasText: "操作失败" }),
@@ -24,7 +24,7 @@ test("documented one-shot development fault supports read, draft save and confir
       page.getByRole("textbox", { name: "正文", exact: true }),
     ).toHaveValue("Retain this sentence.");
     await page.getByRole("button", { name: operation, exact: true }).click();
-    if (operation === "确认并保存") {
+    if (operation === "保存为课文") {
       await page.getByRole("button", { name: "确认保存", exact: true }).click();
       await expect(page).toHaveURL(/\/lessons\//);
     } else

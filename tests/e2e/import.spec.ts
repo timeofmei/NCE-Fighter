@@ -2,18 +2,18 @@
 
 async function start(page: Page) {
   await page.goto("/import");
-  await page.getByRole("combobox", { name: "课文内容语言" }).click();
+  await page.getByRole("combobox", { name: "语言" }).click();
   await page.getByRole("option", { name: "英语", exact: true }).click();
 }
 async function fill(
   page: Page,
   body = "Hello. World!\n😀 Café\n\n  Final line.  ",
 ) {
-  await page.getByRole("textbox", { name: "课文标题" }).fill("My lesson");
+  await page.getByRole("textbox", { name: "标题" }).fill("My lesson");
   await page.getByRole("textbox", { name: "正文", exact: true }).fill(body);
 }
 async function confirm(page: Page) {
-  await page.getByRole("button", { name: "确认并保存", exact: true }).click();
+  await page.getByRole("button", { name: "保存为课文", exact: true }).click();
   await page.getByRole("button", { name: "确认保存", exact: true }).click();
   await expect(page).toHaveURL(/\/lessons\//);
 }
@@ -28,10 +28,8 @@ test("language gate, saved draft refresh, line editing, immutable detail and lib
   await expect(
     page.getByRole("textbox", { name: "正文", exact: true }),
   ).toBeDisabled();
-  await expect(
-    page.getByRole("combobox", { name: "课文内容语言" }),
-  ).toHaveValue("");
-  await page.getByRole("combobox", { name: "课文内容语言" }).click();
+  await expect(page.getByRole("combobox", { name: "语言" })).toHaveValue("");
+  await page.getByRole("combobox", { name: "语言" }).click();
   await page.getByRole("option", { name: "英语", exact: true }).click();
   await fill(page);
   await page.getByRole("button", { name: "保存草稿", exact: true }).click();
@@ -55,18 +53,69 @@ test("language gate, saved draft refresh, line editing, immutable detail and lib
   await expect(page).toHaveURL(/\/library$/);
   await page.reload();
   await expect(page.getByRole("link", { name: "阅读课文" })).toHaveCount(1);
-  await expect(page.getByRole("link", { name: "继续校对" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "继续编辑" })).toHaveCount(0);
   await page.getByRole("textbox", { name: "搜索标题" }).fill("absent");
   await expect(page.getByText("没有匹配的课文。")).toBeVisible();
   expect(errors).toEqual([]);
 });
+test("draft saving keeps editor appearance and scroll position stable", async ({
+  page,
+}) => {
+  await start(page);
+  await fill(
+    page,
+    "Long sentence ".repeat(40) + "\nValid sentence.".repeat(40),
+  );
+  const editor = page.getByRole("textbox", { name: "正文", exact: true });
+  await editor.evaluate((element: HTMLTextAreaElement) => {
+    element.scrollTop = 200;
+    element.scrollLeft = 100;
+  });
+  const appearance = () =>
+    editor.evaluate((element: HTMLTextAreaElement) => {
+      const style = getComputedStyle(element);
+      return {
+        color: style.color,
+        background: style.backgroundColor,
+        top: element.scrollTop,
+        left: element.scrollLeft,
+      };
+    });
+  const before = await appearance();
+  await page.evaluate(() => {
+    const original = IDBDatabase.prototype.transaction;
+    IDBDatabase.prototype.transaction = function (
+      ...args: Parameters<typeof original>
+    ) {
+      const transaction = original.apply(this, args);
+      if (transaction.mode === "readwrite") {
+        Object.defineProperty(transaction, "oncomplete", {
+          set(handler: () => void) {
+            transaction.addEventListener("complete", () =>
+              setTimeout(handler, 500),
+            );
+          },
+        });
+      }
+      return transaction;
+    };
+  });
+  await page.getByRole("button", { name: "保存草稿", exact: true }).click();
+  await expect(editor).toHaveAttribute("readonly", "");
+  await expect(editor).toBeEnabled();
+  expect(await appearance()).toEqual(before);
+  await expect(page.getByRole("status")).toHaveText("草稿已保存");
+  await expect(editor).not.toHaveAttribute("readonly");
+  expect(await appearance()).toEqual(before);
+});
+
 test("invalid line, input limits and safe text rendering", async ({ page }) => {
   await start(page);
   await fill(page, "First\n\n!!!");
   await expect(
     page.getByText("第 3 行没有有效文字或数字，不能仅含标点或符号。"),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: "确认并保存" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "保存为课文" })).toBeDisabled();
   await page.getByRole("button", { name: "定位第 3 行" }).click();
   await expect(
     page.getByRole("textbox", { name: "正文", exact: true }),
@@ -122,24 +171,24 @@ test("unsaved navigation: cancel, save and leave, discard; reload warning", asyn
   await fill(page);
   await page.getByRole("link", { name: "返回课文库" }).click();
   await page.getByRole("button", { name: "继续编辑", exact: true }).click();
-  await expect(page.getByRole("textbox", { name: "课文标题" })).toHaveValue(
+  await expect(page.getByRole("textbox", { name: "标题" })).toHaveValue(
     "My lesson",
   );
   await page.getByRole("link", { name: "返回课文库" }).click();
   await page.getByRole("button", { name: "保存草稿并离开" }).click();
   await expect(page).toHaveURL(/\/library$/);
-  await page.getByRole("link", { name: "继续校对" }).click();
-  await page.getByRole("textbox", { name: "课文标题" }).fill("Unsaved");
+  await page.getByRole("link", { name: "继续编辑" }).click();
+  await page.getByRole("textbox", { name: "标题" }).fill("Unsaved");
   const dialog = page.waitForEvent("dialog");
   const reload = page.reload();
   const warning = await dialog;
   expect(warning.type()).toBe("beforeunload");
   await warning.accept();
   await reload;
-  await expect(page.getByRole("textbox", { name: "课文标题" })).toHaveValue(
+  await expect(page.getByRole("textbox", { name: "标题" })).toHaveValue(
     "My lesson",
   );
-  await page.getByRole("textbox", { name: "课文标题" }).fill("Discard");
+  await page.getByRole("textbox", { name: "标题" }).fill("Discard");
   await page.getByRole("link", { name: "返回课文库" }).click();
   await page.getByRole("button", { name: "放弃修改并离开" }).click();
   await expect(page.getByText("My lesson", { exact: true })).toBeVisible();
@@ -192,7 +241,7 @@ test("failed draft save and failed confirmation retain input; retry and repeated
   await expect(
     page.getByRole("alert").filter({ hasText: "操作失败" }),
   ).not.toContainText("Internal IndexedDB details");
-  await expect(page.getByRole("textbox", { name: "课文标题" })).toHaveValue(
+  await expect(page.getByRole("textbox", { name: "标题" })).toHaveValue(
     "My lesson",
   );
   await page.getByRole("button", { name: "保存草稿", exact: true }).click();
@@ -200,7 +249,7 @@ test("failed draft save and failed confirmation retain input; retry and repeated
     page.getByRole("status").filter({ hasText: "草稿已保存" }),
   ).toBeVisible();
   await injectOnce();
-  await page.getByRole("button", { name: "确认并保存" }).click();
+  await page.getByRole("button", { name: "保存为课文" }).click();
   await page.getByRole("button", { name: "确认保存", exact: true }).click();
   await expect(
     page.getByRole("alert").filter({ hasText: "操作失败" }),
@@ -208,7 +257,7 @@ test("failed draft save and failed confirmation retain input; retry and repeated
   await expect(
     page.getByRole("textbox", { name: "正文", exact: true }),
   ).toHaveValue("Hello. World!\n😀 Café\n\n  Final line.  ");
-  await page.getByRole("button", { name: "确认并保存" }).click();
+  await page.getByRole("button", { name: "保存为课文" }).click();
   await page
     .getByRole("button", { name: "确认保存", exact: true })
     .evaluate((button: HTMLButtonElement) => {
@@ -265,7 +314,7 @@ test("editor draft deletion supports cancellation, failure and retry without los
       button.click();
     });
   await expect(page).toHaveURL(/\/library$/);
-  await expect(page.getByRole("link", { name: "继续校对" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "继续编辑" })).toHaveCount(0);
   await page.goto(draftUrl);
   await expect(page.getByRole("heading", { name: "草稿不存在" })).toBeVisible();
 });
@@ -275,9 +324,7 @@ test("library draft deletion persists across refresh and keeps confirmed lessons
 }) => {
   await start(page);
   await fill(page);
-  await page
-    .getByRole("textbox", { name: "课文标题" })
-    .fill("Confirmed lesson");
+  await page.getByRole("textbox", { name: "标题" }).fill("Confirmed lesson");
   await confirm(page);
   await start(page);
   await fill(page);
@@ -289,10 +336,10 @@ test("library draft deletion persists across refresh and keeps confirmed lessons
   ).toHaveCount(1);
   await page.getByRole("button", { name: "删除草稿", exact: true }).click();
   await page.getByRole("button", { name: "取消", exact: true }).click();
-  await expect(page.getByRole("link", { name: "继续校对" })).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "继续编辑" })).toHaveCount(1);
   await page.getByRole("button", { name: "删除草稿", exact: true }).click();
   await page.getByRole("button", { name: "删除", exact: true }).click();
-  await expect(page.getByRole("link", { name: "继续校对" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "继续编辑" })).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole("link", { name: "阅读课文" })).toHaveCount(1);
   await expect(
@@ -325,7 +372,7 @@ test("narrow layout, long lines and IME composition do not accidentally confirm"
   await page
     .getByRole("textbox", { name: "正文", exact: true })
     .dispatchEvent("compositionstart");
-  await page.getByRole("button", { name: "确认并保存" }).click();
+  await page.getByRole("button", { name: "保存为课文" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page
     .getByRole("textbox", { name: "正文", exact: true })
