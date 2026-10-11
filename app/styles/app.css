@@ -1,0 +1,19 @@
+body {
+  background: #f5f8f7;
+}
+.break-text,
+.sentence {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.sentence {
+  white-space: pre-wrap;
+  flex: 1;
+}
+.editor textarea {
+  font-size: 16px;
+  line-height: 1.7;
+}
+.actions {
+  padding-bottom: env(safe-area-inset-bottom);
+}
