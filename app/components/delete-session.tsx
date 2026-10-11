@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Alert, Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { store } from "../adapters/storage";
 import { errorMessage } from "./feedback";
+import { formatTime } from "./format-time";
 import type { Session } from "../core/training";
 
 export function DeleteSession({
@@ -21,7 +22,7 @@ export function DeleteSession({
     [busy, setBusy] = useState(false),
     [error, setError] = useState<string>();
   const lock = useRef(false);
-  const label = `${lessonTitle || "未命名课文"} · ${new Date(session.updatedAt).toLocaleString()}`;
+  const label = `${lessonTitle || "未命名课文"} · ${formatTime(session.updatedAt)}`;
   const remove = async () => {
     if (lock.current) return;
     lock.current = true;

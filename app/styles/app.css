@@ -20,6 +20,16 @@ textarea,
   white-space: pre-wrap;
   flex: 1;
 }
+.sentence-number {
+  min-width: 2ch;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: var(--mantine-font-size-sm);
+  line-height: var(--mantine-line-height-sm);
+}
+.sentence-number:hover {
+  color: var(--mantine-color-teal-7);
+}
 .editor textarea {
   font-size: 16px;
   line-height: 1.7;

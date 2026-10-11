@@ -14,6 +14,7 @@ import { correct, sentenceText, summarize } from "../core/training";
 import { trainingModule } from "../languages/registry";
 import { errorMessage, LoadError } from "../components/feedback";
 import { AttemptFeedback } from "../components/diff";
+import { formatTime } from "../components/format-time";
 import type { Route } from "./+types/result";
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   try {
@@ -83,7 +84,7 @@ export default function Result({ loaderData }: Route.ComponentProps) {
       <Text>
         逐句默写 ·{" "}
         {session.status === "completed"
-          ? new Date(session.completedAt!).toLocaleString()
+          ? formatTime(session.completedAt!)
           : `已完成 ${summary.first.length}/${session.sentenceIds.length}`}
       </Text>
       <Text>

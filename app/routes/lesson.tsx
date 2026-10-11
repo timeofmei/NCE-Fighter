@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useRevalidator } from "react-router";
 import {
   Alert,
+  ActionIcon,
   Badge,
   Button,
   Card,
@@ -9,13 +10,17 @@ import {
   Stack,
   Text,
   Title,
+  Tooltip,
+  UnstyledButton,
 } from "@mantine/core";
+import { useClipboard } from "@mantine/hooks";
 import { store } from "../adapters/storage";
 import { points } from "../core/lesson";
 import type { Session } from "../core/training";
 import { trainingModule } from "../languages/registry";
 import { errorMessage, LoadError } from "../components/feedback";
 import { DeleteSession } from "../components/delete-session";
+import { formatTime } from "../components/format-time";
 import type { Route } from "./+types/lesson";
 
 const trainingModes: Record<Session["mode"], { label: string; color: string }> =
@@ -39,6 +44,7 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
   const { lesson, error } = loaderData;
   const navigate = useNavigate();
   const revalidator = useRevalidator();
+  const clipboard = useClipboard();
   const [busy, setBusy] = useState(false),
     [failure, setFailure] = useState<string>();
   const lock = useRef(false),
@@ -84,22 +90,69 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
   };
   return (
     <Stack>
-      <Title order={1} className="break-text lesson-title">
-        {lesson.title || "未命名课文"}
-      </Title>
+      <Group justify="space-between" wrap="nowrap" align="center">
+        <Title order={1} className="break-text lesson-title">
+          {lesson.title || "未命名课文"}
+        </Title>
+        <Tooltip label={clipboard.copied ? "已复制" : "复制全部课文"}>
+          <ActionIcon
+            size="lg"
+            variant="subtle"
+            aria-label={clipboard.copied ? "已复制全部课文" : "复制全部课文"}
+            style={{ flexShrink: 0 }}
+            onClick={() => clipboard.copy(lesson.body)}
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              {clipboard.copied ? (
+                <path d="m5 12 4 4L19 6" />
+              ) : (
+                <>
+                  <rect x="8" y="8" width="12" height="12" rx="2" />
+                  <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+                </>
+              )}
+            </svg>
+          </ActionIcon>
+        </Tooltip>
+      </Group>
+      {clipboard.error && (
+        <Alert color="red" role="alert">
+          复制失败，请重试。
+        </Alert>
+      )}
       <Card withBorder>
         <Stack>
           {lesson.sentences.map((sentence) => (
             <Group key={sentence.id} align="baseline" wrap="nowrap" gap="xs">
-              <Text
+              <UnstyledButton
                 c="dimmed"
-                size="sm"
-                miw="2ch"
-                ta="right"
-                style={{ flexShrink: 0 }}
+                className="sentence-number"
+                aria-label={`选中第 ${sentence.order + 1} 行课文`}
+                onClick={(event) => {
+                  const text =
+                    event.currentTarget.parentElement?.querySelector(
+                      ".sentence",
+                    );
+                  const selection = window.getSelection();
+                  if (!text || !selection) return;
+                  const range = document.createRange();
+                  range.selectNodeContents(text);
+                  selection.removeAllRanges();
+                  selection.addRange(range);
+                }}
               >
                 {sentence.order + 1}
-              </Text>
+              </UnstyledButton>
               <Text dir={language?.textDirection} className="sentence">
                 {body.slice(sentence.start, sentence.end).join("")}
               </Text>
@@ -142,7 +195,7 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
                   {session.status === "completed" ? "已完成" : "未完成"}
                 </Badge>
                 <Text size="sm" c="dimmed">
-                  {new Date(session.updatedAt).toLocaleString()}
+                  {formatTime(session.updatedAt)}
                 </Text>
               </Group>
               <Group gap="xs">

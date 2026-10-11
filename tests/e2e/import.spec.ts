@@ -31,6 +31,7 @@ async function confirm(page: Page) {
 }
 test("language gate, saved draft refresh, line editing, immutable detail and library recovery", async ({
   page,
+  context,
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -59,8 +60,42 @@ test("language gate, saved draft refresh, line editing, immutable detail and lib
   await confirm(page);
   await expect(page.getByText("World! 😀 Café", { exact: true })).toBeVisible();
   await expect(page.getByRole("textbox")).toHaveCount(0);
+  await page.getByRole("button", { name: "选中第 2 行课文" }).click();
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe(
+    "World! 😀 Café",
+  );
+  await page.getByRole("button", { name: "选中第 1 行课文" }).focus();
+  await page.keyboard.press("Enter");
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe(
+    "Hello.",
+  );
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.getByRole("button", { name: "复制全部课文", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "已复制全部课文" }),
+  ).toBeVisible();
+  expect(
+    (await page.evaluate(() => navigator.clipboard.readText())).replace(
+      /\r\n/g,
+      "\n",
+    ),
+  ).toBe("Hello.\nWorld! 😀 Café\n  Final line.  ");
   await page.reload();
   await expect(page.getByRole("heading", { name: "My lesson" })).toBeVisible();
+  await page.evaluate(() => {
+    const write = navigator.clipboard.writeText.bind(navigator.clipboard);
+    navigator.clipboard.writeText = async () => {
+      navigator.clipboard.writeText = write;
+      throw new DOMException("injected", "NotAllowedError");
+    };
+  });
+  await page.getByRole("button", { name: "复制全部课文", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveText("复制失败，请重试。");
+  await page.getByRole("button", { name: "复制全部课文", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "已复制全部课文" }),
+  ).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
   await page.getByRole("link", { name: "返回课文库" }).click();
   await expect(page).toHaveURL(/\/library$/);
   await page.reload();

@@ -17,6 +17,7 @@ import { registry } from "../languages/registry";
 import { errorMessage, LoadError } from "../components/feedback";
 import { DeleteDraft } from "../components/delete-draft";
 import { LessonCard } from "../components/lesson-card";
+import { formatTime } from "../components/format-time";
 import type { Route } from "./+types/library";
 
 export async function clientLoader() {
@@ -152,9 +153,7 @@ export default function Library({ loaderData }: Route.ComponentProps) {
                       loaderData.recentTraining[item.id] && (
                         <Text size="sm" c="dimmed">
                           最近训练{" "}
-                          {new Date(
-                            loaderData.recentTraining[item.id],
-                          ).toLocaleString()}
+                          {formatTime(loaderData.recentTraining[item.id])}
                         </Text>
                       )}
                   </Stack>
