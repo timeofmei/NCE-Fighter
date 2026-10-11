@@ -1,5 +1,17 @@
 ﻿import { expect, test, type Page } from "@playwright/test";
 
+async function holdDraft(page: Page) {
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const card = page.locator('.lesson-card[data-state="draft"]').first();
+  const box = await card.boundingBox();
+  if (!box) throw new Error("Missing draft card");
+  await page.mouse.move(box.x + 20, box.y + 20);
+  await page.mouse.down();
+  await expect(card).toHaveAttribute("data-pressing", "true");
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.mouse.up();
+  await expect(page).toHaveURL(/\/library$/);
+}
 async function start(page: Page) {
   await page.goto("/import");
   await page.getByRole("combobox", { name: "语言" }).click();
@@ -52,8 +64,10 @@ test("language gate, saved draft refresh, line editing, immutable detail and lib
   await page.getByRole("link", { name: "返回课文库" }).click();
   await expect(page).toHaveURL(/\/library$/);
   await page.reload();
-  await expect(page.getByRole("link", { name: "阅读课文" })).toHaveCount(1);
-  await expect(page.getByRole("link", { name: "继续编辑" })).toHaveCount(0);
+  await expect(
+    page.locator('.lesson-card[data-state="confirmed"]'),
+  ).toHaveCount(1);
+  await expect(page.locator('.lesson-card[data-state="draft"]')).toHaveCount(0);
   await page.getByRole("textbox", { name: "搜索标题" }).fill("absent");
   await expect(page.getByText("没有匹配的课文。")).toBeVisible();
   expect(errors).toEqual([]);
@@ -177,7 +191,7 @@ test("unsaved navigation: cancel, save and leave, discard; reload warning", asyn
   await page.getByRole("link", { name: "返回课文库" }).click();
   await page.getByRole("button", { name: "保存草稿并离开" }).click();
   await expect(page).toHaveURL(/\/library$/);
-  await page.getByRole("link", { name: "继续编辑" }).click();
+  await page.locator('.lesson-card[data-state="draft"]').click();
   await page.getByRole("textbox", { name: "标题" }).fill("Unsaved");
   const dialog = page.waitForEvent("dialog");
   const reload = page.reload();
@@ -266,7 +280,9 @@ test("failed draft save and failed confirmation retain input; retry and repeated
     });
   await expect(page).toHaveURL(/\/lessons\//);
   await page.getByRole("link", { name: "返回课文库" }).click();
-  await expect(page.getByRole("link", { name: "阅读课文" })).toHaveCount(1);
+  await expect(
+    page.locator('.lesson-card[data-state="confirmed"]'),
+  ).toHaveCount(1);
 });
 test("editor draft deletion supports cancellation, failure and retry without losing input", async ({
   page,
@@ -314,9 +330,61 @@ test("editor draft deletion supports cancellation, failure and retry without los
       button.click();
     });
   await expect(page).toHaveURL(/\/library$/);
-  await expect(page.getByRole("link", { name: "继续编辑" })).toHaveCount(0);
+  await expect(page.locator('.lesson-card[data-state="draft"]')).toHaveCount(0);
   await page.goto(draftUrl);
   await expect(page.getByRole("heading", { name: "草稿不存在" })).toBeVisible();
+});
+
+test("library cards navigate on click and cancel interrupted long presses", async ({
+  page,
+}) => {
+  await start(page);
+  await fill(page);
+  await page.getByRole("button", { name: "保存草稿", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("草稿已保存");
+  await page.getByRole("link", { name: "返回课文库" }).click();
+  const card = page.locator('.lesson-card[data-state="draft"]');
+  await expect(card.getByRole("button")).toHaveCount(0);
+  const box = await card.boundingBox();
+  if (!box) throw new Error("Missing card");
+  await page.mouse.move(box.x + 20, box.y + 20);
+  await page.mouse.down();
+  await expect(card).toHaveAttribute("data-pressing", "true");
+  await expect(card).toHaveCSS("animation-name", "draft-press");
+  await page.mouse.move(box.x + 50, box.y + 20);
+  await expect(card).not.toHaveAttribute("data-pressing");
+  await page.mouse.up();
+  await page.waitForTimeout(750);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page).toHaveURL(/\/library$/);
+  await card.dispatchEvent("pointerdown", {
+    isPrimary: true,
+    button: 0,
+    pointerType: "touch",
+    clientX: 20,
+    clientY: 20,
+  });
+  await expect(card).toHaveAttribute("data-pressing", "true");
+  await card.dispatchEvent("pointercancel", { pointerType: "touch" });
+  await page.waitForTimeout(750);
+  await expect(card).not.toHaveAttribute("data-pressing");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await card.focus();
+  await page.keyboard.press("Delete");
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await card.click();
+  await expect(page).toHaveURL(/\/import\?draft=/);
+  await confirm(page);
+  await page.getByRole("link", { name: "返回课文库" }).click();
+  const confirmed = page.locator('.lesson-card[data-state="confirmed"]');
+  await confirmed.dispatchEvent("pointerdown", { isPrimary: true, button: 0 });
+  await page.waitForTimeout(750);
+  await expect(confirmed).not.toHaveAttribute("data-pressing");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await confirmed.dispatchEvent("pointerup");
+  await confirmed.click();
+  await expect(page).toHaveURL(/\/lessons\//);
 });
 
 test("library draft deletion persists across refresh and keeps confirmed lessons", async ({
@@ -331,17 +399,17 @@ test("library draft deletion persists across refresh and keeps confirmed lessons
   await page.getByRole("button", { name: "保存草稿", exact: true }).click();
   await expect(page.getByRole("status")).toHaveText("草稿已保存");
   await page.getByRole("link", { name: "返回课文库" }).click();
-  await expect(
-    page.getByRole("button", { name: "删除草稿", exact: true }),
-  ).toHaveCount(1);
-  await page.getByRole("button", { name: "删除草稿", exact: true }).click();
+  await expect(page.locator('.lesson-card[data-state="draft"]')).toHaveCount(1);
+  await holdDraft(page);
   await page.getByRole("button", { name: "取消", exact: true }).click();
-  await expect(page.getByRole("link", { name: "继续编辑" })).toHaveCount(1);
-  await page.getByRole("button", { name: "删除草稿", exact: true }).click();
+  await expect(page.locator('.lesson-card[data-state="draft"]')).toHaveCount(1);
+  await holdDraft(page);
   await page.getByRole("button", { name: "删除", exact: true }).click();
-  await expect(page.getByRole("link", { name: "继续编辑" })).toHaveCount(0);
+  await expect(page.locator('.lesson-card[data-state="draft"]')).toHaveCount(0);
   await page.reload();
-  await expect(page.getByRole("link", { name: "阅读课文" })).toHaveCount(1);
+  await expect(
+    page.locator('.lesson-card[data-state="confirmed"]'),
+  ).toHaveCount(1);
   await expect(
     page.getByRole("button", { name: "删除草稿", exact: true }),
   ).toHaveCount(0);

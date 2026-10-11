@@ -1,5 +1,15 @@
 body {
   background: #f5f8f7;
+  -webkit-user-select: none;
+  user-select: none;
+}
+input,
+textarea,
+[contenteditable]:not([contenteditable="false"]),
+.lesson-title,
+.sentence {
+  -webkit-user-select: text;
+  user-select: text;
 }
 .break-text,
 .sentence {
@@ -20,4 +30,28 @@ body {
 }
 .actions {
   padding-bottom: env(safe-area-inset-bottom);
+}
+.lesson-card {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.lesson-card[data-state="draft"] {
+  -webkit-touch-callout: none;
+}
+.lesson-card[data-pressing] {
+  animation: draft-press 650ms linear forwards;
+}
+.lesson-card:focus-visible {
+  outline: 2px solid var(--mantine-color-teal-6);
+  outline-offset: 2px;
+}
+@keyframes draft-press {
+  from {
+    background-color: var(--mantine-color-body);
+  }
+  to {
+    background-color: var(--mantine-color-red-1);
+  }
 }

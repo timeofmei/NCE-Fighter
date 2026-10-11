@@ -16,6 +16,7 @@ import { store } from "../adapters/storage";
 import { registry } from "../languages/registry";
 import { errorMessage, LoadError } from "../components/feedback";
 import { DeleteDraft } from "../components/delete-draft";
+import { LessonCard } from "../components/lesson-card";
 import type { Route } from "./+types/library";
 
 export async function clientLoader() {
@@ -109,8 +110,18 @@ export default function Library({ loaderData }: Route.ComponentProps) {
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             {filtered.map((item) => {
               const lang = registry.resolve(item.languageId);
-              return (
-                <Card withBorder key={item.id}>
+              const renderCard = (onLongPress?: () => void) => (
+                <LessonCard
+                  key={item.id}
+                  title={item.title}
+                  state={item.state}
+                  to={
+                    item.state === "draft"
+                      ? `/import?draft=${encodeURIComponent(item.id)}`
+                      : `/lessons/${encodeURIComponent(item.id)}`
+                  }
+                  onLongPress={onLongPress}
+                >
                   <Stack gap="sm">
                     <Group>
                       <Badge color={item.state === "draft" ? "orange" : "teal"}>
@@ -124,28 +135,19 @@ export default function Library({ loaderData }: Route.ComponentProps) {
                     <Text size="sm" c="dimmed">
                       {item.sentenceCount} 句
                     </Text>
-                    <Group>
-                      <Button
-                        component={Link}
-                        variant="light"
-                        to={
-                          item.state === "draft"
-                            ? `/import?draft=${encodeURIComponent(item.id)}`
-                            : `/lessons/${encodeURIComponent(item.id)}`
-                        }
-                      >
-                        {item.state === "draft" ? "继续编辑" : "阅读课文"}
-                      </Button>
-                      {item.state === "draft" && (
-                        <DeleteDraft
-                          id={item.id}
-                          title={item.title}
-                          onDeleted={() => revalidator.revalidate()}
-                        />
-                      )}
-                    </Group>
                   </Stack>
-                </Card>
+                </LessonCard>
+              );
+              return item.state === "draft" ? (
+                <DeleteDraft
+                  key={item.id}
+                  id={item.id}
+                  title={item.title}
+                  trigger={renderCard}
+                  onDeleted={() => revalidator.revalidate()}
+                />
+              ) : (
+                renderCard()
               );
             })}
           </SimpleGrid>

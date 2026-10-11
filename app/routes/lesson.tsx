@@ -29,7 +29,7 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
   const body = points(lesson.body);
   return (
     <Stack>
-      <Title order={1} className="break-text">
+      <Title order={1} className="break-text lesson-title">
         {lesson.title || "未命名课文"}
       </Title>
       <Card withBorder>

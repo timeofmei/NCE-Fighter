@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Alert, Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { store } from "../adapters/storage";
 import { errorMessage } from "./feedback";
@@ -8,6 +8,7 @@ interface Props {
   title: string;
   disabled?: boolean;
   unsaved?: boolean;
+  trigger?(open: () => void): ReactNode;
   onPendingChange?(pending: boolean): void;
   onDeleted(): void | Promise<void>;
 }
@@ -17,6 +18,7 @@ export function DeleteDraft({
   title,
   disabled,
   unsaved,
+  trigger,
   onPendingChange,
   onDeleted,
 }: Props) {
@@ -24,6 +26,11 @@ export function DeleteDraft({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const lock = useRef(false);
+  const open = () => {
+    if (disabled || lock.current) return;
+    setError(undefined);
+    setOpened(true);
+  };
   const remove = async () => {
     if (lock.current) return;
     lock.current = true;
@@ -43,17 +50,18 @@ export function DeleteDraft({
   };
   return (
     <>
-      <Button
-        color="red"
-        variant="subtle"
-        disabled={disabled || busy}
-        onClick={() => {
-          setError(undefined);
-          setOpened(true);
-        }}
-      >
-        删除草稿
-      </Button>
+      {trigger ? (
+        trigger(open)
+      ) : (
+        <Button
+          color="red"
+          variant="subtle"
+          disabled={disabled || busy}
+          onClick={open}
+        >
+          删除草稿
+        </Button>
+      )}
       <Modal
         opened={opened}
         onClose={() => {
