@@ -64,7 +64,7 @@ describe("user line boundaries and import eligibility", () => {
     expect(analyze("Don't café e\u0301 42 日本語", language).issues).toEqual(
       [],
     );
-    expect(language.capabilities.training).toBe(false);
+    expect(language.capabilities.training).toBe(true);
   });
   it("accepts exactly 20,000 code points including supplementary characters", () => {
     expect(checkLimits("😀".repeat(19_999) + "a")).toEqual([]);

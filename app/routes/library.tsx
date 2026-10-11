@@ -21,9 +21,20 @@ import type { Route } from "./+types/library";
 
 export async function clientLoader() {
   try {
-    return { data: await store.list(), error: undefined };
+    const [data, sessions] = await Promise.all([
+      store.list(),
+      store.sessions(),
+    ]);
+    const recentTraining: Record<string, string> = {};
+    for (const session of sessions)
+      recentTraining[session.lessonId] ??= session.updatedAt;
+    return { data, recentTraining, error: undefined };
   } catch (error) {
-    return { data: undefined, error: errorMessage(error) };
+    return {
+      data: undefined,
+      recentTraining: {} as Record<string, string>,
+      error: errorMessage(error),
+    };
   }
 }
 export default function Library({ loaderData }: Route.ComponentProps) {
@@ -109,7 +120,9 @@ export default function Library({ loaderData }: Route.ComponentProps) {
           )}
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             {filtered.map((item) => {
-              const lang = registry.resolve(item.languageId);
+              const lang = registry
+                .list()
+                .find((language) => language.languageId === item.languageId);
               const renderCard = (onLongPress?: () => void) => (
                 <LessonCard
                   key={item.id}
@@ -127,7 +140,7 @@ export default function Library({ loaderData }: Route.ComponentProps) {
                       <Badge color={item.state === "draft" ? "orange" : "teal"}>
                         {item.state === "draft" ? "待校对" : "已确认"}
                       </Badge>
-                      <Text size="sm">{lang.label}</Text>
+                      <Text size="sm">{lang?.label ?? item.languageId}</Text>
                     </Group>
                     <Text fw={700} className="break-text">
                       {item.title || "未命名课文"}
@@ -135,6 +148,15 @@ export default function Library({ loaderData }: Route.ComponentProps) {
                     <Text size="sm" c="dimmed">
                       {item.sentenceCount} 句
                     </Text>
+                    {item.state === "confirmed" &&
+                      loaderData.recentTraining[item.id] && (
+                        <Text size="sm" c="dimmed">
+                          最近训练{" "}
+                          {new Date(
+                            loaderData.recentTraining[item.id],
+                          ).toLocaleString()}
+                        </Text>
+                      )}
                   </Stack>
                 </LessonCard>
               );

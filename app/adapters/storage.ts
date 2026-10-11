@@ -6,6 +6,15 @@ import {
   type LessonStore,
 } from "../core/lesson";
 import { registry } from "../languages/registry";
+import { trainingModule } from "../languages/registry";
+import {
+  beginSession,
+  reduceSession,
+  summarize,
+  validateSession,
+  type Session,
+  type Event,
+} from "../core/training";
 
 export const DATABASE_NAME = "nce-fighter";
 const request = <T>(req: IDBRequest<T>) =>
@@ -20,11 +29,17 @@ export class IndexedDbStore implements LessonStore {
   ) {}
   private open(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      const req = this.factory().open(this.name, 1);
+      const req = this.factory().open(this.name, 2);
       let blocked = false;
       req.onupgradeneeded = () => {
-        req.result.createObjectStore("drafts", { keyPath: "id" });
-        req.result.createObjectStore("lessons", { keyPath: "lessonId" });
+        for (const [name, keyPath] of [
+          ["drafts", "id"],
+          ["lessons", "lessonId"],
+          ["sessions", "id"],
+        ]) {
+          if (!req.result.objectStoreNames.contains(name))
+            req.result.createObjectStore(name, { keyPath });
+        }
       };
       req.onsuccess = () => {
         if (blocked) {
@@ -105,7 +120,7 @@ export class IndexedDbStore implements LessonStore {
       ]);
       return {
         drafts: drafts.map((draft) => validateDraft(draft, registry)),
-        lessons: lessons.map((lesson) => validateLesson(lesson, registry)),
+        lessons: lessons.map((lesson) => this.historicalLesson(lesson)),
       };
     });
   }
@@ -118,7 +133,9 @@ export class IndexedDbStore implements LessonStore {
   async lesson(id: string) {
     return this.transaction(["lessons"], "readonly", async (tx) => {
       const value: unknown = await request(tx.objectStore("lessons").get(id));
-      return value === undefined ? undefined : validateLesson(value, registry);
+      return value === undefined
+        ? undefined
+        : this.historicalLesson(value as Lesson);
     });
   }
   async saveDraft(draft: Draft) {
@@ -149,6 +166,166 @@ export class IndexedDbStore implements LessonStore {
       } else await request(tx.objectStore("lessons").add(lesson));
       await request(tx.objectStore("drafts").delete(draftId));
     });
+  }
+  async sessions(lessonId?: string): Promise<Session[]> {
+    return this.transaction(["sessions", "lessons"], "readonly", async (tx) => {
+      const values: Session[] = await request(
+        tx.objectStore("sessions").getAll(),
+      );
+      const result: Session[] = [];
+      for (const value of values.filter(
+        (s) => !lessonId || s.lessonId === lessonId,
+      )) {
+        const lesson = await request(
+          tx.objectStore("lessons").get(value.lessonId),
+        );
+        if (!lesson) throw new Error("训练课文缺失，记录已保留。");
+        result.push(
+          await this.trainingRecord(tx, value, this.historicalLesson(lesson)),
+        );
+      }
+      return result.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    });
+  }
+  // Validate snapshots with their pinned metadata even when that module cannot load.
+  private async trainingRecord(
+    tx: IDBTransaction,
+    value: unknown,
+    lesson: Lesson,
+  ): Promise<Session> {
+    const session = validateSession(value, lesson);
+    if (session.sourceSessionId) {
+      if (session.sourceSessionId === session.id)
+        throw new Error("训练记录损坏，无法恢复。");
+      const value = await request(
+        tx.objectStore("sessions").get(session.sourceSessionId),
+      );
+      if (!value) throw new Error("来源训练缺失，记录已保留。");
+      const source = validateSession(value, lesson);
+      if (
+        source.status !== "completed" ||
+        JSON.stringify(summarize(source).wrongIds) !==
+          JSON.stringify(session.sentenceIds)
+      )
+        throw new Error("训练句子归属损坏，无法恢复。");
+    }
+    return session;
+  }
+  private historicalLesson(value: Lesson): Lesson {
+    try {
+      registry.resolve(value.languageId, value.moduleRef);
+    } catch {
+      return this.validateHistoricalShape(value);
+    }
+    return validateLesson(value, registry);
+  }
+  private validateHistoricalShape(value: Lesson): Lesson {
+    return validateLesson(value, {
+      list: () => [],
+      resolve: (languageId, ref) => ({
+        languageId,
+        moduleRef: ref!,
+        label: "",
+        textDirection: "ltr",
+        capabilities: { textImport: true, training: false },
+        countUnits: (text) => (text.trim() ? 1 : 0),
+      }),
+    });
+  }
+  async session(
+    id: string,
+  ): Promise<{ session: Session; lesson: Lesson } | undefined> {
+    return this.transaction(["sessions", "lessons"], "readonly", async (tx) => {
+      const value: Session | undefined = await request(
+        tx.objectStore("sessions").get(id),
+      );
+      if (!value) return undefined;
+      const snapshot: Lesson | undefined = await request(
+        tx.objectStore("lessons").get(value.lessonId),
+      );
+      if (!snapshot) throw new Error("训练课文缺失，记录已保留。");
+      const lesson = this.historicalLesson(snapshot);
+      return { lesson, session: await this.trainingRecord(tx, value, lesson) };
+    });
+  }
+  async startSession(
+    lessonId: string,
+    host: { id: string; now: string },
+    options: { hint?: boolean; sourceSessionId?: string } = {},
+  ): Promise<Session> {
+    return this.transaction(
+      ["sessions", "lessons"],
+      "readwrite",
+      async (tx) => {
+        const value = await request(tx.objectStore("lessons").get(lessonId));
+        if (!value) throw new Error("课文不存在。");
+        const lesson = validateLesson(value, registry),
+          module = trainingModule(lesson.languageId, lesson.moduleRef);
+        const existing = await request(tx.objectStore("sessions").get(host.id));
+        if (existing) {
+          const saved = validateSession(existing, lesson);
+          if (saved.sourceSessionId !== (options.sourceSessionId ?? null))
+            throw new Error("训练标识冲突。");
+          return saved;
+        }
+        let sentenceIds: string[] | undefined;
+        if (options.sourceSessionId) {
+          const source = await request(
+            tx.objectStore("sessions").get(options.sourceSessionId),
+          );
+          const original = validateSession(source, lesson);
+          if (original.status !== "completed")
+            throw new Error("来源训练尚未完成。");
+          sentenceIds = summarize(original).wrongIds;
+        }
+        const session = beginSession(lesson, module, host, {
+          ...options,
+          sentenceIds,
+        });
+        await request(tx.objectStore("sessions").add(session));
+        return session;
+      },
+    );
+  }
+  async updateSession(
+    id: string,
+    expectedVersion: number,
+    event: Event,
+    now: string,
+  ): Promise<Session> {
+    return this.transaction(
+      ["sessions", "lessons"],
+      "readwrite",
+      async (tx) => {
+        const value: Session | undefined = await request(
+          tx.objectStore("sessions").get(id),
+        );
+        if (!value) throw new Error("训练不存在。");
+        const snapshot = await request(
+          tx.objectStore("lessons").get(value.lessonId),
+        );
+        if (!snapshot) throw new Error("训练课文缺失，记录已保留。");
+        const lesson = this.historicalLesson(snapshot),
+          state = await this.trainingRecord(tx, value, lesson);
+        if (
+          (event.kind === "submit" || event.kind === "skip") &&
+          state.attempts.some((a) => a.requestId === event.requestId)
+        )
+          return state;
+        if (state.version !== expectedVersion)
+          throw new Error("训练已在其他窗口更新，请刷新后继续。");
+        const next = reduceSession(
+          state,
+          event,
+          lesson,
+          trainingModule(state.languageId, state.moduleRef),
+          now,
+        );
+        validateSession(next, lesson);
+        await request(tx.objectStore("sessions").put(next));
+        return next;
+      },
+    );
   }
 }
 // No browser API is accessed until a client operation invokes the factory.

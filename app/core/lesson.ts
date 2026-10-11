@@ -3,6 +3,15 @@ export interface ModuleRef {
   moduleVersion: string;
   profileVersion: string;
 }
+export const sameModuleRef = (
+  a: ModuleRef | undefined,
+  b: ModuleRef | undefined,
+) =>
+  !!a &&
+  !!b &&
+  a.moduleId === b.moduleId &&
+  a.moduleVersion === b.moduleVersion &&
+  a.profileVersion === b.profileVersion;
 export interface Sentence {
   id: string;
   order: number;

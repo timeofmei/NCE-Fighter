@@ -1,4 +1,4 @@
-﻿import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 async function holdDraft(page: Page) {
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -192,7 +192,14 @@ test("unsaved navigation: cancel, save and leave, discard; reload warning", asyn
   await page.getByRole("button", { name: "保存草稿并离开" }).click();
   await expect(page).toHaveURL(/\/library$/);
   await page.locator('.lesson-card[data-state="draft"]').click();
+  await expect(page).toHaveURL(/\/import\?draft=/);
+  await expect(page.getByRole("textbox", { name: "标题" })).toHaveValue(
+    "My lesson",
+  );
   await page.getByRole("textbox", { name: "标题" }).fill("Unsaved");
+  await page.getByRole("textbox", { name: "标题" }).press("End");
+  await page.getByRole("textbox", { name: "标题" }).press("x");
+  await expect(page.getByRole("status")).toHaveText("有未保存修改");
   const dialog = page.waitForEvent("dialog");
   const reload = page.reload();
   const warning = await dialog;

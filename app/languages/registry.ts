@@ -1,25 +1,5 @@
-import type { ImportLanguage, Registry } from "../core/lesson";
-
-const english: ImportLanguage = {
-  languageId: "en",
-  label: "英语",
-  textDirection: "ltr",
-  moduleRef: {
-    moduleId: "english-text-import",
-    moduleVersion: "1.0.0",
-    profileVersion: "1.0.0",
-  },
-  capabilities: { textImport: true, training: false },
-  // Import eligibility only. Comparison and hints belong to a later delivery.
-  countUnits(text) {
-    return (
-      text
-        .normalize("NFKC")
-        .replace(/['’]/g, "")
-        .match(/[\p{L}\p{N}][\p{L}\p{M}\p{N}]*/gu) ?? []
-    ).length;
-  },
-};
+import type { Registry } from "../core/lesson";
+import { english } from "./english";
 export const registry: Registry = {
   list: () => [english],
   resolve(languageId, ref) {
@@ -35,3 +15,10 @@ export const registry: Registry = {
     return english;
   },
 };
+export function trainingModule(
+  languageId: string,
+  ref?: Parameters<Registry["resolve"]>[1],
+) {
+  registry.resolve(languageId, ref);
+  return english;
+}

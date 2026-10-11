@@ -37,7 +37,7 @@ core 不依赖 React、DOM、IndexedDB 或模型运行时；语言模块不依�
 
 数据契约唯一维护在[核心引擎](CORE_ENGINE.md#26-逐行确认与持久化契约)。工程使用原生 IndexedDB 的集中适配器，不在各页面分散操作数据库。数据库版本与导出 schemaVersion 分开维护。IndexedDB 保存 JavaScript 字符串，不指定文本文件编码；项目源码、文档和后续 JSON 导出使用 UTF-8。
 
-路由规划：/library 为课文库，/import 为导入与草稿编辑，/lessons/:lessonId 为只读详情；根路径进入课文库。课文 ID 由浏览器生成，详情通过客户端读取。缺失 ID 提示不存在，存储读取失败提示重试；两者不得混同。
+路由：/library 为课文库，/import 为导入与草稿编辑，/lessons/:lessonId 为只读详情，/training/:sessionId 为逐句训练，/results/:sessionId 为保存的训练结果；根路径进入课文库。课文和会话 ID 由浏览器生成，详情与训练通过客户端读取。缺失 ID 提示不存在，存储读取失败提示重试；两者不得混同。
 
 本地数据限定于当前浏览器及站点来源，不承诺跨设备恢复。静态部署须让页面 URL 回退到 index.html，同时保留真实资源请求的正常失败状态；相关配置和断网能力在发布阶段独立验收。
 
@@ -75,3 +75,5 @@ core 不依赖 React、DOM、IndexedDB 或模型运行时；语言模块不依�
 核心测试重点为范围、输入校验、确定性及语言契约；存储测试验证事务失败和恢复；端到端测试验证用户流程及刷新。实际命令、设备和结果记录在阶段文档，不将计划测试记为通过。用户体验验收步骤也只维护在阶段文档。
 
 lint 检查 core/languages 对 UI、路由、存储及浏览器全局的依赖边界。test:e2e 自动启动独立的生产预览（4173）和开发故障验证服务（5174）；运行时这两个端口须空闲。静态部署只发布 build/client，不需要构建时生成的 server 中间产物，也不需要业务服务器；生产托管的路由回退、真实资源 404 与断网能力仍在发布阶段验收。
+
+英语比较性能可通过 `node scripts/benchmark-comparison.mjs` 复测，脚本分别输出两份文本分析和对齐聚合的 p95、设备及样本信息。实际结果和容量限制维护在[第二阶段交付记录](stages/02-sentence-training.md#交付记录)。Unicode 大小写折叠表使用 Unicode 17.0 数据；许可见 [licenses/UNICODE.txt](../licenses/UNICODE.txt)。
