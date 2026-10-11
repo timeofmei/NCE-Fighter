@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Badge, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Button, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { store } from "../adapters/storage";
 import { points } from "../core/lesson";
 import { registry } from "../languages/registry";
@@ -29,12 +29,6 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
   const body = points(lesson.body);
   return (
     <Stack>
-      <Group>
-        <Badge>已确认 · 只读</Badge>
-        <Text>
-          {language.label} · {lesson.sentences.length} 句
-        </Text>
-      </Group>
       <Title order={1} className="break-text">
         {lesson.title || "未命名课文"}
       </Title>
@@ -55,9 +49,6 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
       <Group>
         <Button component={Link} to="/library" variant="light">
           返回课文库
-        </Button>
-        <Button component={Link} to="/import">
-          新建导入
         </Button>
       </Group>
     </Stack>

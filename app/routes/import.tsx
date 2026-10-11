@@ -3,7 +3,6 @@ import { Link, useBeforeUnload, useBlocker, useNavigate } from "react-router";
 import {
   Alert,
   Button,
-  Card,
   Group,
   Modal,
   Select,
@@ -302,26 +301,15 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
       </Stack>
       <Modal
         opened={review}
+        title={form.title || "未命名课文"}
         onClose={() => {
           if (!busy) setReview(false);
         }}
         closeOnClickOutside={!busy}
         closeOnEscape={!busy}
         withCloseButton={!busy}
-        title="确认标准答案"
       >
         <Stack>
-          <Text fw={700} className="break-text">
-            {form.title || "未命名课文"}
-          </Text>
-          <Text>
-            {language?.label} · {analysis?.sentences.length} 句
-          </Text>
-          <Card withBorder mah={280} style={{ overflowY: "auto" }}>
-            <Text className="sentence" dir={language?.textDirection}>
-              {analysis?.body}
-            </Text>
-          </Card>
           <Text>
             确认保存后不可修改标题、正文、语言及句子划分。课文保存在此浏览器，清除站点数据会丢失课文和草稿。
           </Text>

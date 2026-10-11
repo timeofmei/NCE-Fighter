@@ -47,7 +47,6 @@ test("language gate, saved draft refresh, line editing, immutable detail and lib
     .getByRole("textbox", { name: "正文", exact: true })
     .fill("Hello.\nWorld! 😀 Café\n  Final line.  ");
   await confirm(page);
-  await expect(page.getByText("已确认 · 只读")).toBeVisible();
   await expect(page.getByText("World! 😀 Café", { exact: true })).toBeVisible();
   await expect(page.getByRole("textbox")).toHaveCount(0);
   await page.reload();
@@ -321,7 +320,7 @@ test("narrow layout, long lines and IME composition do not accidentally confirm"
   ).toHaveValue("Long sentence ".repeat(100));
   await editor.fill("Long sentence ".repeat(100) + "\nNext sentence.");
   await confirm(page);
-  await expect(page.getByText("英语 · 2 句", { exact: true })).toBeVisible();
+  await expect(page.getByText("Next sentence.", { exact: true })).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
