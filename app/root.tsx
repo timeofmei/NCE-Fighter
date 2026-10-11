@@ -25,7 +25,7 @@ import {
 } from "react-router";
 import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import logoUrl from "./assets/logo.png";
+import logoUrl from "./assets/logo.webp";
 
 const theme = createTheme({
   primaryColor: "teal",
