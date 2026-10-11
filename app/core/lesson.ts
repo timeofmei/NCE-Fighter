@@ -203,5 +203,6 @@ export interface LessonStore {
   draft(id: string): Promise<Draft | undefined>;
   lesson(id: string): Promise<Lesson | undefined>;
   saveDraft(draft: Draft): Promise<void>;
+  deleteDraft(id: string): Promise<void>;
   confirm(draftId: string, lesson: Lesson): Promise<void>;
 }

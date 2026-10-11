@@ -195,12 +195,109 @@ test("failed draft save and failed confirmation retain input; retry and repeated
   await page.getByRole("link", { name: "返回课文库" }).click();
   await expect(page.getByRole("link", { name: "阅读课文" })).toHaveCount(1);
 });
+test("editor draft deletion supports cancellation, failure and retry without losing input", async ({
+  page,
+}) => {
+  await start(page);
+  await expect(
+    page.getByRole("button", { name: "删除草稿", exact: true }),
+  ).toHaveCount(0);
+  await fill(page);
+  await page.getByRole("button", { name: "保存草稿", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("草稿已保存");
+  const draftUrl = page.url();
+  await page
+    .getByRole("textbox", { name: "正文", exact: true })
+    .fill("Unsaved sentence.");
+  await page.getByRole("button", { name: "删除草稿", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "草稿及当前未保存修改将被删除，无法恢复。",
+  );
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(
+    page.getByRole("textbox", { name: "正文", exact: true }),
+  ).toHaveValue("Unsaved sentence.");
+  await page.evaluate(() => {
+    const original = indexedDB.open.bind(indexedDB);
+    indexedDB.open = () => {
+      indexedDB.open = original;
+      throw new DOMException("Internal error", "AbortError");
+    };
+  });
+  await page.getByRole("button", { name: "删除草稿", exact: true }).click();
+  await page.getByRole("button", { name: "删除", exact: true }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "删除失败" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(
+    page.getByRole("textbox", { name: "正文", exact: true }),
+  ).toHaveValue("Unsaved sentence.");
+  await page.getByRole("button", { name: "删除草稿", exact: true }).click();
+  await page
+    .getByRole("button", { name: "删除", exact: true })
+    .evaluate((button: HTMLButtonElement) => {
+      button.click();
+      button.click();
+    });
+  await expect(page).toHaveURL(/\/library$/);
+  await expect(page.getByRole("link", { name: "继续校对" })).toHaveCount(0);
+  await page.goto(draftUrl);
+  await expect(page.getByRole("heading", { name: "草稿不存在" })).toBeVisible();
+});
+
+test("library draft deletion persists across refresh and keeps confirmed lessons", async ({
+  page,
+}) => {
+  await start(page);
+  await fill(page);
+  await page
+    .getByRole("textbox", { name: "课文标题" })
+    .fill("Confirmed lesson");
+  await confirm(page);
+  await start(page);
+  await fill(page);
+  await page.getByRole("button", { name: "保存草稿", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("草稿已保存");
+  await page.getByRole("link", { name: "返回课文库" }).click();
+  await expect(
+    page.getByRole("button", { name: "删除草稿", exact: true }),
+  ).toHaveCount(1);
+  await page.getByRole("button", { name: "删除草稿", exact: true }).click();
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(page.getByRole("link", { name: "继续校对" })).toHaveCount(1);
+  await page.getByRole("button", { name: "删除草稿", exact: true }).click();
+  await page.getByRole("button", { name: "删除", exact: true }).click();
+  await expect(page.getByRole("link", { name: "继续校对" })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("link", { name: "阅读课文" })).toHaveCount(1);
+  await expect(
+    page.getByRole("button", { name: "删除草稿", exact: true }),
+  ).toHaveCount(0);
+});
+
 test("narrow layout, long lines and IME composition do not accidentally confirm", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await start(page);
   await fill(page, "Long sentence ".repeat(100));
+  const editor = page.getByRole("textbox", { name: "正文", exact: true });
+  const layout = await editor.evaluate((element: HTMLTextAreaElement) => ({
+    horizontalOverflow: element.scrollWidth > element.clientWidth,
+    verticalOverflow: element.scrollHeight > element.clientHeight,
+    height: element.clientHeight,
+    lineHeight: parseFloat(getComputedStyle(element).lineHeight),
+  }));
+  expect(layout.height).toBeGreaterThanOrEqual(layout.lineHeight * 12);
+  expect(layout.horizontalOverflow).toBe(true);
+  expect(layout.verticalOverflow).toBe(false);
+  await editor.evaluate((element: HTMLTextAreaElement) => {
+    element.scrollLeft = element.scrollWidth;
+  });
+  expect(
+    await editor.evaluate((element: HTMLTextAreaElement) => element.scrollLeft),
+  ).toBeGreaterThan(0);
   await page
     .getByRole("textbox", { name: "正文", exact: true })
     .dispatchEvent("compositionstart");
@@ -222,7 +319,9 @@ test("narrow layout, long lines and IME composition do not accidentally confirm"
   await expect(
     page.getByRole("textbox", { name: "正文", exact: true }),
   ).toHaveValue("Long sentence ".repeat(100));
+  await editor.fill("Long sentence ".repeat(100) + "\nNext sentence.");
   await confirm(page);
+  await expect(page.getByText("英语 · 2 句", { exact: true })).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,

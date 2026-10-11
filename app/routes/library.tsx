@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useRevalidator } from "react-router";
 import {
   Badge,
   Button,
@@ -15,6 +15,7 @@ import {
 import { store } from "../adapters/storage";
 import { registry } from "../languages/registry";
 import { errorMessage, LoadError } from "../components/feedback";
+import { DeleteDraft } from "../components/delete-draft";
 import type { Route } from "./+types/library";
 
 export async function clientLoader() {
@@ -25,6 +26,7 @@ export async function clientLoader() {
   }
 }
 export default function Library({ loaderData }: Route.ComponentProps) {
+  const revalidator = useRevalidator();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [language, setLanguage] = useState<string | null>(null);
@@ -122,17 +124,26 @@ export default function Library({ loaderData }: Route.ComponentProps) {
                     <Text size="sm" c="dimmed">
                       {item.sentenceCount} 句
                     </Text>
-                    <Button
-                      component={Link}
-                      variant="light"
-                      to={
-                        item.state === "draft"
-                          ? `/import?draft=${encodeURIComponent(item.id)}`
-                          : `/lessons/${encodeURIComponent(item.id)}`
-                      }
-                    >
-                      {item.state === "draft" ? "继续校对" : "阅读课文"}
-                    </Button>
+                    <Group>
+                      <Button
+                        component={Link}
+                        variant="light"
+                        to={
+                          item.state === "draft"
+                            ? `/import?draft=${encodeURIComponent(item.id)}`
+                            : `/lessons/${encodeURIComponent(item.id)}`
+                        }
+                      >
+                        {item.state === "draft" ? "继续校对" : "阅读课文"}
+                      </Button>
+                      {item.state === "draft" && (
+                        <DeleteDraft
+                          id={item.id}
+                          title={item.title}
+                          onDeleted={() => revalidator.revalidate()}
+                        />
+                      )}
+                    </Group>
                   </Stack>
                 </Card>
               );

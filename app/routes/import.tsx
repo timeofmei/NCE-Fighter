@@ -25,6 +25,7 @@ import {
 } from "../core/lesson";
 import { registry } from "../languages/registry";
 import { errorMessage, LoadError } from "../components/feedback";
+import { DeleteDraft } from "../components/delete-draft";
 import type { Route } from "./+types/import";
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
@@ -220,9 +221,8 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
         label="正文"
         description="每行一句"
         placeholder="粘贴或输入课文"
-        minRows={12}
-        autosize
-        maxRows={24}
+        rows={12}
+        wrap="off"
         value={form.body}
         disabled={!language || busy}
         dir={language?.textDirection ?? "ltr"}
@@ -282,6 +282,22 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
           >
             确认并保存
           </Button>
+          {hasSaved && (
+            <DeleteDraft
+              id={id}
+              title={form.title}
+              disabled={busy}
+              unsaved={dirty}
+              onPendingChange={(pending) => {
+                lock.current = pending;
+                setBusy(pending);
+              }}
+              onDeleted={async () => {
+                bypass.current = true;
+                await navigate("/library");
+              }}
+            />
+          )}
         </Group>
       </Stack>
       <Modal

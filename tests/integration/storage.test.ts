@@ -63,7 +63,27 @@ describe("IndexedDB transaction and recovery", () => {
     });
     await expect(failing.lesson("missing")).rejects.toThrow("存储失败");
   });
-  it("rolls back snapshot insertion and draft deletion when the transaction aborts", async () => {
+  it("deletes only the requested draft, supports retries, and preserves confirmed lessons", async () => {
+    await store.saveDraft(draft);
+    const other = { ...draft, id: "other" };
+    await store.saveDraft(other);
+    const confirmed = { ...snapshot(), lessonId: "confirmed" };
+    await store.confirm("confirmed", confirmed);
+    await Promise.all([
+      store.deleteDraft(draft.id),
+      store.deleteDraft(draft.id),
+    ]);
+    expect(
+      await new IndexedDbStore(() => factory, "test").draft(draft.id),
+    ).toBeUndefined();
+    expect(await store.list()).toEqual({
+      drafts: [other],
+      lessons: [confirmed],
+    });
+    await store.deleteDraft("confirmed");
+    expect(await store.lesson("confirmed")).toEqual(confirmed);
+  });
+  it("rolls back confirmation and draft deletion when the transaction aborts", async () => {
     await store.saveDraft(draft);
     const open = factory.open.bind(factory);
     factory.open = (...args: Parameters<IDBFactory["open"]>) => {
@@ -95,6 +115,7 @@ describe("IndexedDB transaction and recovery", () => {
     await expect(store.confirm(draft.id, snapshot())).rejects.toThrow(
       "存储失败",
     );
+    await expect(store.deleteDraft(draft.id)).rejects.toThrow("存储失败");
     factory.open = open;
     expect(await store.list()).toEqual({ drafts: [draft], lessons: [] });
     await store.confirm(draft.id, snapshot());

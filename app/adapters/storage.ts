@@ -129,6 +129,11 @@ export class IndexedDbStore implements LessonStore {
       await request(tx.objectStore("drafts").put(draft));
     });
   }
+  async deleteDraft(id: string) {
+    return this.transaction(["drafts"], "readwrite", async (tx) => {
+      await request(tx.objectStore("drafts").delete(id));
+    });
+  }
   async confirm(draftId: string, lesson: Lesson) {
     validateLesson(lesson, registry);
     if (draftId !== lesson.lessonId)
