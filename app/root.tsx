@@ -5,6 +5,7 @@ import {
   Button,
   Container,
   Group,
+  Image,
   Loader,
   MantineProvider,
   Select,
@@ -24,6 +25,7 @@ import {
 } from "react-router";
 import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
+import logoUrl from "./assets/logo.png";
 
 const theme = createTheme({
   primaryColor: "teal",
@@ -42,6 +44,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
         <title>NCE Fighter</title>
         <Meta />
         <Links />
@@ -54,10 +57,20 @@ export function Layout({ children }: { children: ReactNode }) {
                 component={Link}
                 to="/library"
                 fw={800}
-                size="xl"
+                fz={32}
                 underline="never"
               >
-                NCE Fighter
+                <Group gap="xs" wrap="nowrap">
+                  <Image
+                    src={logoUrl}
+                    alt=""
+                    w={100}
+                    h={100}
+                    fit="contain"
+                    draggable={false}
+                  />
+                  <span>NCE Fighter</span>
+                </Group>
               </Anchor>
             </Group>
             {children}
