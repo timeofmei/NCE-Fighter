@@ -35,7 +35,7 @@ core 不依赖 React、DOM、IndexedDB 或模型运行时；语言模块不依�
 
 ## 数据与页面组织
 
-数据契约唯一维护在[核心引擎](CORE_ENGINE.md)。采用 IndexedDB 保存草稿及确认快照，分别存储并使用事务完成确认；初期使用原生 IndexedDB 的集中适配器，不在各页面分散操作数据库。数据库版本与导出 schemaVersion 分开维护。IndexedDB 保存 JavaScript 字符串，不指定文本文件编码；项目源码、文档和后续 JSON 导出使用 UTF-8。码点计数及范围索引按核心契约处理，与文件编码分开。
+数据契约唯一维护在[核心引擎](CORE_ENGINE.md#26-逐行确认与持久化契约)。工程使用原生 IndexedDB 的集中适配器，不在各页面分散操作数据库。数据库版本与导出 schemaVersion 分开维护。IndexedDB 保存 JavaScript 字符串，不指定文本文件编码；项目源码、文档和后续 JSON 导出使用 UTF-8。
 
 路由规划：/library 为课文库，/import 为导入与草稿编辑，/lessons/:lessonId 为只读详情；根路径进入课文库。课文 ID 由浏览器生成，详情通过客户端读取。缺失 ID 提示不存在，存储读取失败提示重试；两者不得混同。
 
@@ -43,7 +43,7 @@ core 不依赖 React、DOM、IndexedDB 或模型运行时；语言模块不依�
 
 编辑与训练状态以局部状态和必要的共享上下文管理；出现实际复杂度后再评估全局状态库。
 
-访问统计使用 @vercel/analytics，在根布局挂载 React Analytics 组件。按 Vite 环境显式选择开发或生产模式，开发模式仅记录调试事件。启用统计需在 Vercel 项目的 Analytics 页面点击 Enable，再部署包含组件的版本；线上数据上报需部署后验证。接入步骤见 [Vercel 官方指南](https://vercel.com/docs/analytics/quickstart)。
+访问统计使用 @vercel/analytics，在根布局挂载 React Analytics 组件。按 Vite 环境显式选择开发或生产模式，开发模式仅记录调试事件。网络与用户数据边界见[本地处理与静态部署](WEB_LOCAL_PROCESSING.md#18-本地处理与静态部署)。启用统计需在 Vercel 项目的 Analytics 页面点击 Enable，再部署包含组件的版本；部署后检查脚本加载和事件上报，仪表盘数据显示单独确认。接入步骤见 [Vercel 官方指南](https://vercel.com/docs/analytics/quickstart)。
 
 ## 组件与主题
 
@@ -51,7 +51,7 @@ core 不依赖 React、DOM、IndexedDB 或模型运行时；语言模块不依�
 
 使用 @mantine/core、@mantine/hooks，按需加入 @mantine/form 和 @mantine/notifications。统一在根页面配置 MantineProvider、主题与样式入口，颜色、字体、圆角和间距集中管理。具体视觉主题尚未确定。
 
-正文编辑使用 Textarea，直接保留用户换行并提示“每行一句”；句数与按编辑器原行号定位的错误作为业务辅助展示，不另设行号预览区域。离开确认使用 Modal，操作反馈使用 Notifications 或 Alert。表单 UI 校验复用核心校验结果，不在组件库层重新定义业务规则。
+正文编辑使用 Textarea，确认窗口使用 Modal，操作反馈使用 Notifications 或 Alert；布局、文案和错误定位见 [P02](WEB_UX.md#p02-导入)。表单 UI 校验复用核心校验结果，不在组件库层重新定义业务规则。
 
 初始化时验证 Mantine 与所选 React、框架版本及 SPA 构建的兼容性，相关包版本保持匹配并写入锁文件。[Mantine 官方指南](https://mantine.dev/getting-started/)。
 
