@@ -10,7 +10,7 @@
 
 界面日期时间统一按浏览器时区显示为 `YYYY-MM-DD HH:mm`，使用 24 小时制，不显示秒；适用于训练记录、最近训练时间、结果完成时间及删除确认窗口。
 
-全局页头中“NCE Fighter”与 logo 位于同一行，名称靠左、logo 靠右；点击名称返回课文库。
+全局页头中“NCE Fighter”与 logo 位于同一行，名称靠左、logo 靠右；点击名称返回课文库，点击 logo 在新标签页打开 [GitHub 仓库](https://github.com/timeofmei/NCE-Fighter)。
 
 ### P01 课文库
 

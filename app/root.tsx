@@ -64,15 +64,22 @@ export function Layout({ children }: { children: ReactNode }) {
               >
                 NCE Fighter
               </Anchor>
-              <Image
-                src={logoUrl}
-                alt=""
-                w={100}
-                h={100}
-                fit="contain"
-                draggable={false}
+              <Anchor
+                href="https://github.com/timeofmei/NCE-Fighter"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="查看 NCE Fighter GitHub 仓库"
                 style={{ flexShrink: 0 }}
-              />
+              >
+                <Image
+                  src={logoUrl}
+                  alt=""
+                  w={100}
+                  h={100}
+                  fit="contain"
+                  draggable={false}
+                />
+              </Anchor>
             </Group>
             {children}
           </Container>
