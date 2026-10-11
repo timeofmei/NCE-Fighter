@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useRevalidator } from "react-router";
 import {
   Badge,
-  Button,
   Card,
   Group,
   Select,
@@ -73,12 +72,7 @@ export default function Library({ loaderData }: Route.ComponentProps) {
   );
   return (
     <Stack>
-      <Group justify="space-between">
-        <Title order={1}>课文库</Title>
-        <Button component={Link} to="/import">
-          导入课文
-        </Button>
-      </Group>
+      <Title order={1}>课文库</Title>
       {loaderData.error ? (
         <LoadError message={loaderData.error} />
       ) : (
@@ -111,15 +105,30 @@ export default function Library({ loaderData }: Route.ComponentProps) {
               onChange={setStatus}
             />
           </SimpleGrid>
-          {!items.length && (
-            <Card withBorder>
-              <Text>还没有课文。</Text>
-            </Card>
-          )}
           {items.length > 0 && !filtered.length && (
             <Text>没有匹配的课文。</Text>
           )}
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <Card
+              component={Link}
+              to="/import"
+              aria-label="导入课文"
+              withBorder
+              className="lesson-card import-card"
+            >
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </Card>
             {filtered.map((item) => {
               const lang = registry
                 .list()

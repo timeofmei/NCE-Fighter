@@ -52,7 +52,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <body>
         <MantineProvider theme={theme} forceColorScheme="light">
           <Container size="md" py="lg">
-            <Group mb="xl">
+            <Group mb="xl" justify="space-between" wrap="nowrap">
               <Anchor
                 component={Link}
                 to="/library"
@@ -60,18 +60,17 @@ export function Layout({ children }: { children: ReactNode }) {
                 fz={32}
                 underline="never"
               >
-                <Group gap="xs" wrap="nowrap">
-                  <Image
-                    src={logoUrl}
-                    alt=""
-                    w={100}
-                    h={100}
-                    fit="contain"
-                    draggable={false}
-                  />
-                  <span>NCE Fighter</span>
-                </Group>
+                NCE Fighter
               </Anchor>
+              <Image
+                src={logoUrl}
+                alt=""
+                w={100}
+                h={100}
+                fit="contain"
+                draggable={false}
+                style={{ flexShrink: 0 }}
+              />
             </Group>
             {children}
           </Container>

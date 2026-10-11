@@ -47,6 +47,12 @@ textarea,
   cursor: pointer;
   touch-action: pan-y;
 }
+.import-card {
+  min-height: 144px;
+  align-items: center;
+  justify-content: center;
+  color: var(--mantine-color-teal-6);
+}
 .lesson-card[data-state="draft"] {
   -webkit-touch-callout: none;
 }
