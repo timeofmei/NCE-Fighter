@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useRevalidator } from "react-router";
 import {
   Alert,
@@ -43,6 +43,9 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
     [failure, setFailure] = useState<string>();
   const lock = useRef(false),
     host = useRef<{ id: string; now: string } | undefined>(undefined);
+  useEffect(() => {
+    if (lesson) window.getSelection()?.removeAllRanges();
+  }, [lesson?.lessonId]);
   if (error) return <LoadError message={error} />;
   if (!lesson)
     return (
