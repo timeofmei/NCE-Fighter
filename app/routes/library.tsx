@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Link, useRevalidator } from "react-router";
 import {
   Badge,
+  Button,
   Card,
   Group,
+  Modal,
   Select,
   SimpleGrid,
   Stack,
@@ -39,6 +41,7 @@ export async function clientLoader() {
 }
 export default function Library({ loaderData }: Route.ComponentProps) {
   const revalidator = useRevalidator();
+  const [helpOpened, setHelpOpened] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [language, setLanguage] = useState<string | null>(null);
@@ -72,7 +75,32 @@ export default function Library({ loaderData }: Route.ComponentProps) {
   );
   return (
     <Stack>
-      <Title order={1}>课文库</Title>
+      <Group justify="space-between" wrap="nowrap">
+        <Title order={1}>课文库</Title>
+        <Button variant="subtle" onClick={() => setHelpOpened(true)}>
+          帮助
+        </Button>
+      </Group>
+      <Modal
+        opened={helpOpened}
+        onClose={() => setHelpOpened(false)}
+        withCloseButton={false}
+        aria-label="帮助"
+      >
+        <Stack>
+          <div className="library-help-content">
+            <s>翻开新概念之前我简直是在乱学英语</s>
+            <Text>跟NCE Fighter一起背课文吧！</Text>
+            <Text>先导入课文，然后按你喜欢的方式检查背诵成果就好~</Text>
+            <Text>（BGM起）</Text>
+            <Text>🎵那年仲夏 你背上行囊离开家🎵</Text>
+            <Text>🎵古道旁 我欲语泪先下🎵</Text>
+          </div>
+          <Group justify="center">
+            <Button onClick={() => setHelpOpened(false)}>确定</Button>
+          </Group>
+        </Stack>
+      </Modal>
       {loaderData.error ? (
         <LoadError message={loaderData.error} />
       ) : (
