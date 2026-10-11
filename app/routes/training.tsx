@@ -200,6 +200,7 @@ function Trainer({
       )}
       <Textarea
         label="本句默写"
+        styles={{ input: { fontSize: 16 } }}
         rows={8}
         value={input}
         readOnly={session.status !== "answering" || busy}

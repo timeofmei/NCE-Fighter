@@ -182,53 +182,51 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
         <Stack gap="xs">
           <Title order={2}>训练记录</Title>
           {loaderData.sessions.map((session) => (
-            <Group
-              key={session.id}
-              justify="space-between"
-              data-session-id={session.id}
-            >
-              <Group gap="xs">
-                <Badge
-                  color={trainingModes[session.mode].color}
-                  variant="light"
-                  size="lg"
-                >
-                  {trainingModes[session.mode].label}
-                </Badge>
-                <Badge
-                  color={session.status === "completed" ? "teal" : "orange"}
-                  variant="light"
-                  size="lg"
-                >
-                  {session.status === "completed" ? "已完成" : "未完成"}
-                </Badge>
-                <Text size="sm" c="dimmed">
-                  {formatTime(session.updatedAt)}
-                </Text>
+            <Card key={session.id} withBorder radius="md" padding="sm">
+              <Group justify="space-between" data-session-id={session.id}>
+                <Group gap="xs">
+                  <Badge
+                    color={trainingModes[session.mode].color}
+                    variant="light"
+                    size="lg"
+                  >
+                    {trainingModes[session.mode].label}
+                  </Badge>
+                  <Badge
+                    color={session.status === "completed" ? "teal" : "orange"}
+                    variant="light"
+                    size="lg"
+                  >
+                    {session.status === "completed" ? "已完成" : "未完成"}
+                  </Badge>
+                  <Text size="sm" c="dimmed">
+                    {formatTime(session.updatedAt)}
+                  </Text>
+                </Group>
+                <Group gap="xs">
+                  <Button
+                    component={Link}
+                    variant="light"
+                    to={
+                      session.status === "completed"
+                        ? `/results/${session.id}`
+                        : `/training/${session.id}`
+                    }
+                  >
+                    {session.status === "completed" ? "查看结果" : "继续训练"}
+                  </Button>
+                  <DeleteSession
+                    session={session}
+                    lessonTitle={lesson.title}
+                    hasPractice={loaderData.sessions.some(
+                      (item) => item.sourceSessionId === session.id,
+                    )}
+                    disabled={busy || revalidator.state !== "idle"}
+                    onDeleted={() => revalidator.revalidate()}
+                  />
+                </Group>
               </Group>
-              <Group gap="xs">
-                <Button
-                  component={Link}
-                  variant="light"
-                  to={
-                    session.status === "completed"
-                      ? `/results/${session.id}`
-                      : `/training/${session.id}`
-                  }
-                >
-                  {session.status === "completed" ? "查看结果" : "继续训练"}
-                </Button>
-                <DeleteSession
-                  session={session}
-                  lessonTitle={lesson.title}
-                  hasPractice={loaderData.sessions.some(
-                    (item) => item.sourceSessionId === session.id,
-                  )}
-                  disabled={busy || revalidator.state !== "idle"}
-                  onDeleted={() => revalidator.revalidate()}
-                />
-              </Group>
-            </Group>
+            </Card>
           ))}
         </Stack>
       )}
