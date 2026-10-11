@@ -2,7 +2,7 @@
 
 版本：0.3　日期：2026 年 10 月 11 日
 
-本文涵盖 P01 至 P08、页面跳转和通用交互，保留原 PRD 第 7 节编号。训练规则见[产品需求](PRODUCT_REQUIREMENTS.md)，识别能力与资源约束见[Web 本地处理](WEB_LOCAL_PROCESSING.md)。返回[文档索引](NCE_Fighter_MVP_PRD.md)。
+本文涵盖 P01 至 P08、页面跳转和通用交互，保留原 PRD 第 7 节编号。训练规则见[产品需求](PRODUCT_REQUIREMENTS.md)，识别能力与资源约束见[Web 本地处理](WEB_LOCAL_PROCESSING.md)。返回[项目文档导航](../README.md#项目文档)。
 
 ## 7 核心页面设计
 

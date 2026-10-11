@@ -2,7 +2,7 @@
 
 版本：0.3　日期：2026 年 10 月 11 日
 
-本文涵盖核心验收 A01 至 A32 与里程碑 M1 至 M7，保留原 PRD 第 8、9 节编号。核心交付项 C01 至 C12 见[产品需求第 2 节](PRODUCT_REQUIREMENTS.md#21-核心引擎-mvp)，Web 验收 B01 至 B20 见[Web 本地处理第 11.9 节](WEB_LOCAL_PROCESSING.md#119-web-接入验收)。返回[文档索引](NCE_Fighter_MVP_PRD.md)。
+本文涵盖核心验收 A01 至 A32 与里程碑 M1 至 M7，保留原 PRD 第 8、9 节编号。核心交付项 C01 至 C12 见[产品需求第 2 节](PRODUCT_REQUIREMENTS.md#21-核心引擎-mvp)，Web 验收 B01 至 B20 见[Web 本地处理第 11.9 节](WEB_LOCAL_PROCESSING.md#119-web-接入验收)。返回[项目文档导航](../README.md#项目文档)。
 
 ## 8 验收标准
 

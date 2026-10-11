@@ -2,7 +2,7 @@
 
 版本：0.3　日期：2026 年 10 月 11 日
 
-本文涵盖文本比对、语言模块、数据对象与训练状态，保留原 PRD 第 5、6 节编号。业务需求见[产品需求](PRODUCT_REQUIREMENTS.md)，验证要求见[验收与里程碑](DELIVERY_PLAN.md)。返回[文档索引](NCE_Fighter_MVP_PRD.md)。
+本文涵盖文本比对、语言模块、数据对象与训练状态，保留原 PRD 第 5、6 节编号。业务需求见[产品需求](PRODUCT_REQUIREMENTS.md)，验证要求见[验收与里程碑](DELIVERY_PLAN.md)。返回[项目文档导航](../README.md#项目文档)。
 
 ## 5 多语言文本比对规范
 

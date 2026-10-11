@@ -1,6 +1,6 @@
 # 仓库协作规则
 
-本文件适用于整个仓库。项目与需求入口见 [README](README.md) 和[文档索引](doc/NCE_Fighter_MVP_PRD.md)。
+本文件适用于整个仓库。项目简介与文档导航见 [README](README.md)。
 
 ## 文件编辑与提交确认
 
