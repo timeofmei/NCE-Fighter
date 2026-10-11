@@ -41,7 +41,12 @@ export interface Session {
 export type Event =
   | { kind: "input"; text: string }
   | { kind: "hint"; visible: boolean }
-  | { kind: "submit" | "skip"; requestId: string; attemptId: string }
+  | {
+      kind: "submit" | "skip";
+      requestId: string;
+      attemptId: string;
+      text?: string;
+    }
   | { kind: "rewrite" }
   | { kind: "next" };
 export function beginSession(
@@ -152,13 +157,17 @@ export function reduceSession(
     }
   } else {
     if (state.status !== "answering") throw new Error("本句已提交。");
+    const input = event.text ?? state.input;
+    if (points(input).length > 20_000)
+      throw new Error("输入超过 20,000 个字符，请缩短后重试。");
+    next.input = input;
     const sentenceId = state.sentenceIds[state.index];
     const text = sentenceText(lesson, sentenceId);
     const reference = module.prepare(text, [
       { id: sentenceId, order: 0, start: 0, end: points(text).length },
     ]);
-    const actual = module.prepare(state.input, [
-      { id: sentenceId, order: 0, start: 0, end: points(state.input).length },
+    const actual = module.prepare(input, [
+      { id: sentenceId, order: 0, start: 0, end: points(input).length },
     ]);
     if (event.kind === "submit" && !actual.units.length)
       throw new Error("请输入有效文字或数字后提交。");
@@ -166,8 +175,8 @@ export function reduceSession(
       id: event.attemptId,
       requestId: event.requestId,
       sentenceId,
-      rawText: state.input,
-      confirmedText: state.input,
+      rawText: input,
+      confirmedText: input,
       hintUsed: state.hintUsed,
       answerSeenBeforeAttempt: state.answerSeen,
       status: event.kind === "skip" ? "skipped" : "checked",

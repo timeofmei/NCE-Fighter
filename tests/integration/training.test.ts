@@ -224,6 +224,40 @@ it("rejects a missing source session without inventing practice dependencies", a
   });
   await expect(store.session("s")).rejects.toThrow("来源训练缺失");
 });
+it("submits text and result atomically without a saved input draft", async () => {
+  const state = await store.startSession("lesson", {
+    id: "direct-submit",
+    now,
+  });
+  const checked = await store.updateSession(
+    state.id,
+    state.version,
+    {
+      kind: "submit",
+      requestId: "direct",
+      attemptId: "direct",
+      text: "I had a very good seat",
+    },
+    now,
+  );
+  expect(checked.version).toBe(state.version + 1);
+  expect(checked.input).toBe("I had a very good seat");
+  expect(checked.attempts[0].rawText).toBe(checked.input);
+  expect((await store.session(state.id))?.session).toEqual(checked);
+  const repeated = await store.updateSession(
+    state.id,
+    state.version,
+    {
+      kind: "submit",
+      requestId: "direct",
+      attemptId: "direct",
+      text: "different late input",
+    },
+    now,
+  );
+  expect(repeated).toEqual(checked);
+});
+
 async function sourceAndPractice() {
   let state = await store.startSession("lesson", { id: "source", now });
   for (let i = 0; i < 3; i++) {

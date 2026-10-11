@@ -26,7 +26,6 @@ test("unfinished record deletion supports cancellation, failure, retry and refre
   await start(page, "One sentence.");
   const training = page.url();
   await page.getByRole("textbox", { name: "本句默写" }).fill("saved input");
-  await expect(page.getByRole("status")).toHaveText("已保存");
   await page.getByRole("button", { name: "返回课文", exact: true }).click();
   await expect(page).toHaveURL(/\/lessons\//);
   const lessonUrl = page.url();
@@ -82,7 +81,6 @@ test("deleting a source result preserves its practice and other records", async 
   await expect(page).toHaveURL(/\/training\//);
   const practiceId = page.url().split("/").at(-1)!;
   await page.getByRole("textbox", { name: "本句默写" }).fill("one sentence");
-  await expect(page.getByRole("status")).toHaveText("已保存");
   await page.getByRole("button", { name: "返回课文", exact: true }).click();
   await page
     .locator(`[data-session-id="${sourceId}"]`)
@@ -97,9 +95,8 @@ test("deleting a source result preserves its practice and other records", async 
     .locator(`[data-session-id="${practiceId}"]`)
     .getByRole("link", { name: "继续训练" })
     .click();
-  await expect(page.getByRole("textbox", { name: "本句默写" })).toHaveValue(
-    "one sentence",
-  );
+  await expect(page.getByRole("textbox", { name: "本句默写" })).toHaveValue("");
+  await page.getByRole("textbox", { name: "本句默写" }).fill("one sentence");
   await page.getByRole("button", { name: "提交本句" }).click();
   await page.getByRole("button", { name: "查看本次结果" }).click();
   await expect(page.getByText(/首次完全正确 1/)).toBeVisible();
@@ -108,7 +105,7 @@ test("deleting a source result preserves its practice and other records", async 
   await page.goto(sourceResult);
   await expect(page.getByText("训练不存在。", { exact: true })).toBeVisible();
 });
-test("hidden answer, autosave, hint exposure, rewrites, skips, history and immutable wrong-sentence practice", async ({
+test("hidden answer, hint exposure, rewrites, skips, history and immutable wrong-sentence practice", async ({
   page,
 }) => {
   await start(page);
@@ -119,11 +116,11 @@ test("hidden answer, autosave, hint exposure, rewrites, skips, history and immut
   await page
     .getByRole("textbox", { name: "本句默写" })
     .fill("I had a good seat");
-  await expect(page.getByRole("status")).toHaveText("已保存");
   await page.reload();
-  await expect(page.getByRole("textbox", { name: "本句默写" })).toHaveValue(
-    "I had a good seat",
-  );
+  await expect(page.getByRole("textbox", { name: "本句默写" })).toHaveValue("");
+  await page
+    .getByRole("textbox", { name: "本句默写" })
+    .fill("I had a good seat");
   await page
     .getByRole("button", { name: "提交本句", exact: true })
     .evaluate((button: HTMLButtonElement) => {
@@ -182,7 +179,40 @@ test("hidden answer, autosave, hint exposure, rewrites, skips, history and immut
     page.getByRole("link", { name: "查看结果", exact: true }),
   ).toHaveCount(2);
 });
-test("storage failure retains draft, retry works and return resumes input", async ({
+test("unsubmitted input stays editable and is discarded on refresh or return", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await start(page, "Only one sentence.");
+  const editor = page.getByRole("textbox", { name: "本句默写" });
+  await editor.evaluate((element) => {
+    element.setAttribute("data-readonly-changes", "0");
+    new MutationObserver((changes) => {
+      const count = Number(element.getAttribute("data-readonly-changes"));
+      element.setAttribute(
+        "data-readonly-changes",
+        String(count + changes.length),
+      );
+    }).observe(element, { attributes: true, attributeFilter: ["readonly"] });
+  });
+  await editor.fill("Only one");
+  await expect(editor).toBeFocused();
+  await expect(editor).toBeEditable();
+  await editor.press("End");
+  await editor.pressSequentially(" sentence");
+  await expect(editor).toBeFocused();
+  await expect(editor).toHaveAttribute("data-readonly-changes", "0");
+  await expect(page.getByRole("status")).toHaveCount(0);
+  await page.getByRole("button", { name: "返回课文", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("link", { name: "继续训练", exact: true }).click();
+  await expect(editor).toHaveValue("");
+  await editor.fill("another unsent input");
+  await page.reload();
+  await expect(editor).toHaveValue("");
+});
+
+test("submission failure retains input and successful retry survives return", async ({
   page,
 }) => {
   await start(page, "Only one sentence.");
@@ -196,19 +226,19 @@ test("storage failure retains draft, retry works and return resumes input", asyn
   await page
     .getByRole("textbox", { name: "本句默写" })
     .fill("Only one sentence");
+  await page.getByRole("button", { name: "提交本句" }).click();
   await expect(page.getByRole("alert")).toContainText("存储空间不足");
   await expect(page.getByRole("textbox", { name: "本句默写" })).toHaveValue(
     "Only one sentence",
   );
   await expect(page.getByText("标准原句", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "重试保存" }).click();
-  await expect(page.getByRole("status")).toHaveText("已保存");
+  await expect(page.getByText("完全正确", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "返回课文", exact: true }).click();
   await page.getByRole("link", { name: "继续训练", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "本句默写" })).toHaveValue(
     "Only one sentence",
   );
-  await page.getByRole("button", { name: "提交本句" }).click();
   await page.getByRole("button", { name: "查看本次结果" }).click();
   await expect(page).toHaveURL(/\/results\//);
   await page.reload();
@@ -247,7 +277,6 @@ test("failed submit and next retain visible state until a successful retry", asy
 }) => {
   await start(page, "First sentence.\nSecond sentence.");
   await page.getByRole("textbox", { name: "本句默写" }).fill("First sentence");
-  await expect(page.getByRole("status")).toHaveText("已保存");
   const fail = async () =>
     page.evaluate(() => {
       const open = indexedDB.open.bind(indexedDB);

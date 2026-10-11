@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useBeforeUnload, useBlocker, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   Alert,
   Button,
   Card,
   Group,
-  Modal,
   Stack,
   Switch,
   Text,
@@ -14,7 +13,12 @@ import {
 } from "@mantine/core";
 import { store } from "../adapters/storage";
 import { points, type Lesson } from "../core/lesson";
-import { correct, sentenceText, type Session, type Event } from "../core/training";
+import {
+  correct,
+  sentenceText,
+  type Session,
+  type Event,
+} from "../core/training";
 import { trainingModule } from "../languages/registry";
 import type { TrainingLanguage } from "../core/comparison";
 import { errorMessage, LoadError } from "../components/feedback";
@@ -68,36 +72,24 @@ function Trainer({
   const navigate = useNavigate();
   const [session, setSession] = useState(initial),
     saved = useRef(initial);
-  const [input, setInput] = useState(initial.input),
-    draft = useRef(initial.input);
+  const [input, setInput] = useState(
+      initial.status === "checked" ? initial.input : "",
+    ),
+    draft = useRef(input);
   const [busy, setBusy] = useState(false),
     lock = useRef(false),
-    composition = useRef(false),
-    bypass = useRef(false);
+    composition = useRef(false);
   const [error, setError] = useState<string>();
-  const [composing, setComposing] = useState(false);
   const failedEvent = useRef<Event | undefined>(undefined);
   const pending = useRef<
-    | { kind: "submit" | "skip"; requestId: string; attemptId: string }
+    | {
+        kind: "submit" | "skip";
+        requestId: string;
+        attemptId: string;
+        text: string;
+      }
     | undefined
   >(undefined);
-  const dirty = input !== session.input;
-  const blocker = useBlocker(
-    () =>
-      !bypass.current &&
-      (draft.current !== saved.current.input || lock.current),
-  );
-  useBeforeUnload(
-    useCallback((event) => {
-      if (
-        !bypass.current &&
-        (draft.current !== saved.current.input || lock.current)
-      ) {
-        event.preventDefault();
-        event.returnValue = "";
-      }
-    }, []),
-  );
   const write = useCallback(async (event: Event) => {
     const next = await store.updateSession(
       saved.current.id,
@@ -109,20 +101,12 @@ function Trainer({
     setSession(next);
     return next;
   }, []);
-  const flush = useCallback(async () => {
-    if (
-      saved.current.status === "answering" &&
-      draft.current !== saved.current.input
-    )
-      await write({ kind: "input", text: draft.current });
-  }, [write]);
   const operate = useCallback(
     async (event?: Event, target?: string) => {
       if (lock.current || composition.current) return false;
       lock.current = true;
       setBusy(true);
       try {
-        await flush();
         const next = event ? await write(event) : saved.current;
         if (event && ["next", "rewrite"].includes(event.kind)) {
           draft.current = next.input;
@@ -132,7 +116,6 @@ function Trainer({
         setError(undefined);
         failedEvent.current = undefined;
         if (target || next.status === "completed") {
-          bypass.current = true;
           await navigate(target ?? `/results/${next.id}`);
         }
         return true;
@@ -145,18 +128,10 @@ function Trainer({
         setBusy(false);
       }
     },
-    [flush, write, navigate],
+    [write, navigate],
   );
   useEffect(() => {
-    if (!dirty || busy || error || composing) return;
-    const timer = setTimeout(() => {
-      void operate();
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [dirty, input, busy, error, composing, operate]);
-  useEffect(() => {
     if (initial.status === "completed") {
-      bypass.current = true;
       void navigate(`/results/${initial.id}`, { replace: true });
     }
   }, [initial, navigate]);
@@ -167,6 +142,7 @@ function Trainer({
         kind,
         requestId: crypto.randomUUID(),
         attemptId: crypto.randomUUID(),
+        text: draft.current,
       };
     void operate(pending.current);
   };
@@ -178,11 +154,9 @@ function Trainer({
     <Stack
       onCompositionStart={() => {
         composition.current = true;
-        setComposing(true);
       }}
       onCompositionEnd={() => {
         composition.current = false;
-        setComposing(false);
       }}
     >
       <Group justify="space-between">
@@ -249,15 +223,6 @@ function Trainer({
           }
         }}
       />
-      <Text size="sm" c="dimmed" role="status">
-        {busy
-          ? "正在保存"
-          : error && dirty
-            ? "保存未完成"
-            : dirty
-              ? "有未保存输入"
-              : "已保存"}
-      </Text>
       {error && (
         <Alert color="red" title="操作失败" role="alert">
           {error}
@@ -314,47 +279,6 @@ function Trainer({
           </>
         )}
       </Group>
-      <Modal
-        opened={blocker.state === "blocked"}
-        onClose={() => blocker.state === "blocked" && blocker.reset()}
-        title="离开训练"
-        withCloseButton={!busy}
-        closeOnEscape={!busy}
-        closeOnClickOutside={!busy}
-      >
-        <Stack>
-          <Text>保存当前输入后离开。</Text>
-          {error && <Alert color="red">{error}</Alert>}
-          <Group>
-            <Button
-              disabled={busy}
-              onClick={async () => {
-                if ((await operate()) && blocker.state === "blocked")
-                  blocker.proceed();
-              }}
-            >
-              保存并离开
-            </Button>
-            <Button
-              variant="light"
-              disabled={busy}
-              onClick={() => blocker.state === "blocked" && blocker.reset()}
-            >
-              继续训练
-            </Button>
-            {error && (
-              <Button
-                color="red"
-                variant="subtle"
-                disabled={busy}
-                onClick={() => blocker.state === "blocked" && blocker.proceed()}
-              >
-                放弃未保存输入
-              </Button>
-            )}
-          </Group>
-        </Stack>
-      </Modal>
     </Stack>
   );
 }
