@@ -4,7 +4,7 @@
 
 ## 技术栈与运行边界
 
-采用 React Router Framework Mode、TypeScript 和 SPA 模式；使用框架的 Vite 集成，不额外建立业务服务器。配置 ssr: false，产物为 build/client，发布到支持页面路由回退的静态 HTTPS 站点。
+采用 React Router Framework Mode、TypeScript、Mantine 和 SPA 模式；使用框架的 Vite 集成，不额外建立业务服务器。配置 ssr: false，产物为 build/client，发布到支持页面路由回退的静态 HTTPS 站点。
 
 SPA 模式仍会在构建期预渲染根页面。IndexedDB、文件、麦克风和模型能力仅在浏览器阶段初始化，浏览器适配模块不能在初始渲染或模块顶层访问这些能力。使用客户端加载与操作处理本地数据。[官方 SPA 指南](https://reactrouter.com/how-to/spa)。
 
@@ -41,7 +41,17 @@ core 不依赖 React、DOM、IndexedDB 或模型运行时；语言模块不依�
 
 本地数据限定于当前浏览器及站点来源，不承诺跨设备恢复。静态部署须让页面 URL 回退到 index.html，同时保留真实资源请求的正常失败状态；相关配置和断网能力在发布阶段独立验收。
 
-初期采用 CSS 与原生可访问控件，编辑与训练状态以局部状态和必要的共享上下文管理；出现实际复杂度后再评估全局状态库。初期不加入远程遥测。
+编辑与训练状态以局部状态和必要的共享上下文管理；出现实际复杂度后再评估全局状态库。初期不加入远程遥测。
+
+## 组件与主题
+
+通用 UI 使用 Mantine，不自行实现按钮、输入框、选择器、弹窗、通知等基础控件。页面与业务组件通过组合库组件实现，额外 CSS 用于必要的页面布局和业务展示。
+
+使用 @mantine/core、@mantine/hooks，按需加入 @mantine/form 和 @mantine/notifications。统一在根页面配置 MantineProvider、主题与样式入口，颜色、字体、圆角和间距集中管理。具体视觉主题尚未确定。
+
+正文编辑使用 Textarea，直接保留用户换行并提示“每行一句”；行号、句数与错误定位作为业务辅助展示。离开确认使用 Modal，操作反馈使用 Notifications 或 Alert。表单 UI 校验复用核心校验结果，不在组件库层重新定义业务规则。
+
+初始化时验证 Mantine 与所选 React、框架版本及 SPA 构建的兼容性，相关包版本保持匹配并写入锁文件。[Mantine 官方指南](https://mantine.dev/getting-started/)。
 
 ## 开发命令与验证
 
