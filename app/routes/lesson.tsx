@@ -1,12 +1,27 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate, useRevalidator } from "react-router";
-import { Alert, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Group,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
 import { store } from "../adapters/storage";
 import { points } from "../core/lesson";
+import type { Session } from "../core/training";
 import { trainingModule } from "../languages/registry";
 import { errorMessage, LoadError } from "../components/feedback";
 import { DeleteSession } from "../components/delete-session";
 import type { Route } from "./+types/lesson";
+
+const trainingModes: Record<Session["mode"], { label: string; color: string }> =
+  {
+    sentence_dictation: { label: "逐句默写", color: "blue" },
+  };
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   try {
@@ -72,8 +87,14 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
       <Card withBorder>
         <Stack>
           {lesson.sentences.map((sentence) => (
-            <Group key={sentence.id} align="start" wrap="nowrap">
-              <Text c="dimmed" size="sm" w={28} style={{ flexShrink: 0 }}>
+            <Group key={sentence.id} align="baseline" wrap="nowrap" gap="xs">
+              <Text
+                c="dimmed"
+                size="sm"
+                miw="2ch"
+                ta="right"
+                style={{ flexShrink: 0 }}
+              >
                 {sentence.order + 1}
               </Text>
               <Text dir={language?.textDirection} className="sentence">
@@ -102,10 +123,25 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
               justify="space-between"
               data-session-id={session.id}
             >
-              <Text>
-                {new Date(session.updatedAt).toLocaleString()} ·{" "}
-                {session.status === "completed" ? "已完成" : "未完成"}
-              </Text>
+              <Group gap="xs">
+                <Badge
+                  color={trainingModes[session.mode].color}
+                  variant="light"
+                  size="lg"
+                >
+                  {trainingModes[session.mode].label}
+                </Badge>
+                <Badge
+                  color={session.status === "completed" ? "teal" : "orange"}
+                  variant="light"
+                  size="lg"
+                >
+                  {session.status === "completed" ? "已完成" : "未完成"}
+                </Badge>
+                <Text size="sm" c="dimmed">
+                  {new Date(session.updatedAt).toLocaleString()}
+                </Text>
+              </Group>
               <Group gap="xs">
                 <Button
                   component={Link}

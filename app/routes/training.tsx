@@ -14,7 +14,7 @@ import {
 } from "@mantine/core";
 import { store } from "../adapters/storage";
 import { points, type Lesson } from "../core/lesson";
-import { sentenceText, type Session, type Event } from "../core/training";
+import { correct, sentenceText, type Session, type Event } from "../core/training";
 import { trainingModule } from "../languages/registry";
 import type { TrainingLanguage } from "../core/comparison";
 import { errorMessage, LoadError } from "../components/feedback";
@@ -294,13 +294,15 @@ function Trainer({
           </>
         ) : (
           <>
-            <Button
-              variant="light"
-              disabled={busy}
-              onClick={() => void operate({ kind: "rewrite" })}
-            >
-              重写本句
-            </Button>
+            {last && !correct(last) && (
+              <Button
+                variant="light"
+                disabled={busy}
+                onClick={() => void operate({ kind: "rewrite" })}
+              >
+                重写本句
+              </Button>
+            )}
             <Button
               disabled={busy}
               onClick={() => void operate({ kind: "next" })}

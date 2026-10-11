@@ -138,6 +138,10 @@ test("hidden answer, autosave, hint exposure, rewrites, skips, history and immut
   await expect(page.getByText("标准原句", { exact: true })).toHaveCount(0);
   await answer(page, "I had a very good seat");
   await expect(page.getByText("完全正确", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "重写本句" })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByText("完全正确", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "重写本句" })).toHaveCount(0);
   await page.getByRole("button", { name: "下一句" }).click();
   await expect(
     page.getByText("I had a very good seat.", { exact: true }),
@@ -151,9 +155,11 @@ test("hidden answer, autosave, hint exposure, rewrites, skips, history and immut
   await expect(page.getByText("d s", { exact: true })).toHaveCount(0);
   await answer(page, "dont stop");
   await expect(page.getByText("完全正确", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "重写本句" })).toHaveCount(0);
   await page.getByRole("button", { name: "下一句" }).click();
   await page.getByRole("button", { name: "跳过本句" }).click();
   await expect(page.getByText("Hello,world!", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "重写本句" })).toBeVisible();
   await page.getByRole("button", { name: "查看本次结果" }).click();
   await expect(page).toHaveURL(/\/results\//);
   const result = page.url();
