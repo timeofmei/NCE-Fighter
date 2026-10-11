@@ -187,6 +187,25 @@ export class IndexedDbStore implements LessonStore {
       return result.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
     });
   }
+  async deleteSession(id: string): Promise<void> {
+    return this.transaction(["sessions"], "readwrite", async (tx) => {
+      const sessions = tx.objectStore("sessions");
+      const values: Session[] = await request(sessions.getAll());
+      for (const session of values) {
+        if (session.sourceSessionId === id && session.id !== id) {
+          // Preserve practice results; reject writes based on the previous linkage.
+          await request(
+            sessions.put({
+              ...session,
+              sourceSessionId: null,
+              version: session.version + 1,
+            }),
+          );
+        }
+      }
+      await request(sessions.delete(id));
+    });
+  }
   // Validate snapshots with their pinned metadata even when that module cannot load.
   private async trainingRecord(
     tx: IDBTransaction,

@@ -8,7 +8,7 @@
 
 SPA 模式仍会在构建期预渲染根页面。IndexedDB、文件、麦克风和模型能力仅在浏览器阶段初始化，浏览器适配模块不能在初始渲染或模块顶层访问这些能力。使用客户端加载与操作处理本地数据。[官方 SPA 指南](https://reactrouter.com/how-to/spa)。
 
-实测环境为 Windows x64、Node.js 24.21.0、npm 12.2.0。React Router 与框架工具 8.4.0、React 与 React DOM 19.3.0、Mantine core/hooks 9.7.1、Vite 8.3.4、TypeScript 6.0.3 已完成集成验证；依赖精确版本以 package.json 和 package-lock.json 为准。未验证其他 Node.js 版本，不将上述实测版本视为最低支持承诺。
+依赖及其精确版本以 [package.json](../package.json) 和 [package-lock.json](../package-lock.json) 为准。
 
 ## 工程结构
 
@@ -59,7 +59,7 @@ core 不依赖 React、DOM、IndexedDB 或模型运行时；语言模块不依�
 
 ## 开发命令与验证
 
-在仓库根目录执行下列实际命令。首次安装运行 npm ci；首次运行端到端测试另执行 npx playwright install chromium。开发地址默认 http://127.0.0.1:5173；生产预览默认 http://127.0.0.1:4173，须先完成构建。保持相同地址及端口测试恢复，开发与预览的本地数据分别保存。
+在仓库根目录执行下列实际命令。首次安装运行 npm ci；首次运行端到端测试另执行 npx playwright install chromium。访问地址以启动命令输出为准；生产预览须先完成构建。恢复测试使用同一浏览器和站点来源。
 
 | 命令 | 用途 |
 | --- | --- |
@@ -72,8 +72,8 @@ core 不依赖 React、DOM、IndexedDB 或模型运行时；语言模块不依�
 | npm run build | 验证静态生产构建 |
 | npm run preview | 在本地预览 build/client 的生产产物 |
 
-核心测试重点为范围、输入校验、确定性及语言契约；存储测试验证事务失败和恢复；端到端测试验证用户流程及刷新。实际命令、设备和结果记录在阶段文档，不将计划测试记为通过。用户体验验收步骤也只维护在阶段文档。
+核心测试重点为范围、输入校验、确定性及语言契约；存储测试验证事务失败和恢复；端到端测试验证用户流程及刷新。实际命令和结果记录在阶段文档，不将计划测试记为通过。用户体验验收步骤也只维护在阶段文档。
 
-lint 检查 core/languages 对 UI、路由、存储及浏览器全局的依赖边界。test:e2e 自动启动独立的生产预览（4173）和开发故障验证服务（5174）；运行时这两个端口须空闲。静态部署只发布 build/client，不需要构建时生成的 server 中间产物，也不需要业务服务器；生产托管的路由回退、真实资源 404 与断网能力仍在发布阶段验收。
+lint 检查 core/languages 对 UI、路由、存储及浏览器全局的依赖边界。test:e2e 自动启动独立的生产预览和开发故障验证服务；服务配置见 [playwright.config.ts](../playwright.config.ts)，运行时配置的端口须空闲。静态部署只发布 build/client，不需要构建时生成的 server 中间产物，也不需要业务服务器；生产托管的路由回退、真实资源 404 与断网能力仍在发布阶段验收。
 
-英语比较性能可通过 `node scripts/benchmark-comparison.mjs` 复测，脚本分别输出两份文本分析和对齐聚合的 p95、设备及样本信息。实际结果和容量限制维护在[第二阶段交付记录](stages/02-sentence-training.md#交付记录)。Unicode 大小写折叠表使用 Unicode 17.0 数据；许可见 [licenses/UNICODE.txt](../licenses/UNICODE.txt)。
+英语比较性能可通过 `node scripts/benchmark-comparison.mjs` 测量，脚本分别输出两份文本分析和对齐聚合的 p95。容量限制维护在[第二阶段交付记录](stages/02-sentence-training.md#交付记录)。Unicode 大小写折叠表使用 Unicode 17.0 数据；许可见 [licenses/UNICODE.txt](../licenses/UNICODE.txt)。

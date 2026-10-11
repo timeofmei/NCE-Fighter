@@ -20,6 +20,94 @@ async function answer(page: Page, text: string) {
   await page.getByRole("button", { name: "提交本句", exact: true }).click();
   await expect(page.getByText("标准原句", { exact: true })).toBeVisible();
 }
+test("unfinished record deletion supports cancellation, failure, retry and refresh", async ({
+  page,
+}) => {
+  await start(page, "One sentence.");
+  const training = page.url();
+  await page.getByRole("textbox", { name: "本句默写" }).fill("saved input");
+  await expect(page.getByRole("status")).toHaveText("已保存");
+  await page.getByRole("button", { name: "返回课文", exact: true }).click();
+  await expect(page).toHaveURL(/\/lessons\//);
+  const lessonUrl = page.url();
+  const remove = page.getByRole("button", { name: /删除 .* 的训练记录/ });
+  await remove.click();
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(
+    page.getByRole("link", { name: "继续训练", exact: true }),
+  ).toBeVisible();
+  await remove.click();
+  await page.evaluate(() => {
+    const open = indexedDB.open.bind(indexedDB);
+    indexedDB.open = () => {
+      indexedDB.open = open;
+      throw new Error("injected");
+    };
+  });
+  await page.getByRole("button", { name: "删除", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("删除失败");
+  await expect(
+    page.getByRole("link", { name: "继续训练", exact: true }),
+  ).toHaveCount(1);
+  await page
+    .getByRole("button", { name: "删除", exact: true })
+    .evaluate((button: HTMLButtonElement) => {
+      button.click();
+      button.click();
+    });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "继续训练", exact: true }),
+  ).toHaveCount(0);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Sentence lesson" }),
+  ).toBeVisible();
+  await expect(remove).toHaveCount(0);
+  await page.goto(training);
+  await expect(page.getByText("训练不存在。", { exact: true })).toBeVisible();
+  await page.goto(lessonUrl);
+  await expect(page.getByText("One sentence.", { exact: true })).toBeVisible();
+});
+test("deleting a source result preserves its practice and other records", async ({
+  page,
+}) => {
+  await start(page, "One sentence.");
+  const sourceId = page.url().split("/").at(-1)!;
+  await page.getByRole("button", { name: "跳过本句" }).click();
+  await page.getByRole("button", { name: "查看本次结果" }).click();
+  await expect(page).toHaveURL(/\/results\//);
+  const sourceResult = page.url();
+  await page.getByRole("button", { name: "重练错误与跳过句" }).click();
+  await expect(page).toHaveURL(/\/training\//);
+  const practiceId = page.url().split("/").at(-1)!;
+  await page.getByRole("textbox", { name: "本句默写" }).fill("one sentence");
+  await expect(page.getByRole("status")).toHaveText("已保存");
+  await page.getByRole("button", { name: "返回课文", exact: true }).click();
+  await page
+    .locator(`[data-session-id="${sourceId}"]`)
+    .getByRole("button", { name: /删除/ })
+    .click();
+  await expect(page.getByRole("dialog")).toContainText("相关重练记录会保留");
+  await page.getByRole("button", { name: "删除", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator(`[data-session-id="${sourceId}"]`)).toHaveCount(0);
+  await page
+    .locator(`[data-session-id="${practiceId}"]`)
+    .getByRole("link", { name: "继续训练" })
+    .click();
+  await expect(page.getByRole("textbox", { name: "本句默写" })).toHaveValue(
+    "one sentence",
+  );
+  await page.getByRole("button", { name: "提交本句" }).click();
+  await page.getByRole("button", { name: "查看本次结果" }).click();
+  await expect(page.getByText(/首次完全正确 1/)).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(/首次完全正确 1/)).toBeVisible();
+  await page.goto(sourceResult);
+  await expect(page.getByText("训练不存在。", { exact: true })).toBeVisible();
+});
 test("hidden answer, autosave, hint exposure, rewrites, skips, history and immutable wrong-sentence practice", async ({
   page,
 }) => {

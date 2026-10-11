@@ -224,6 +224,110 @@ it("rejects a missing source session without inventing practice dependencies", a
   });
   await expect(store.session("s")).rejects.toThrow("来源训练缺失");
 });
+async function sourceAndPractice() {
+  let state = await store.startSession("lesson", { id: "source", now });
+  for (let i = 0; i < 3; i++) {
+    state = await store.updateSession(
+      state.id,
+      state.version,
+      { kind: "skip", requestId: `r${i}`, attemptId: `a${i}` },
+      now,
+    );
+    state = await store.updateSession(
+      state.id,
+      state.version,
+      { kind: "next" },
+      now,
+    );
+  }
+  return store.startSession(
+    "lesson",
+    { id: "practice", now },
+    { sourceSessionId: "source" },
+  );
+}
+it("deletes only selected sessions and detaches practice atomically without changing saved work", async () => {
+  const practice = await sourceAndPractice();
+  const child = await store.updateSession(
+    practice.id,
+    practice.version,
+    { kind: "input", text: "saved practice input" },
+    now,
+  );
+  await store.startSession("lesson", { id: "other", now });
+  await store.deleteSession("source");
+  await store.deleteSession("source");
+  expect(await store.session("source")).toBeUndefined();
+  expect((await store.session(child.id))?.session).toEqual({
+    ...child,
+    sourceSessionId: null,
+    version: child.version + 1,
+  });
+  expect((await store.sessions("lesson")).map((s) => s.id).sort()).toEqual([
+    "other",
+    "practice",
+  ]);
+  expect(await store.lesson("lesson")).toEqual(lesson());
+  await expect(
+    store.updateSession(
+      child.id,
+      child.version,
+      { kind: "input", text: "stale" },
+      now,
+    ),
+  ).rejects.toThrow("其他窗口");
+  const resumed = await store.updateSession(
+    child.id,
+    child.version + 1,
+    { kind: "input", text: "resumed" },
+    now,
+  );
+  expect(resumed.input).toBe("resumed");
+});
+it("rolls back deletion and unlinking together when the transaction aborts, then permits retry", async () => {
+  const practice = await sourceAndPractice();
+  const original = IDBObjectStore.prototype.delete;
+  IDBObjectStore.prototype.delete = function (
+    ...args: Parameters<IDBObjectStore["delete"]>
+  ) {
+    if (this.name === "sessions") {
+      this.transaction.abort();
+      throw new Error("injected delete abort");
+    }
+    return original.apply(this, args);
+  };
+  try {
+    await expect(store.deleteSession("source")).rejects.toThrow("存储失败");
+  } finally {
+    IDBObjectStore.prototype.delete = original;
+  }
+  expect((await store.session("source"))?.session.status).toBe("completed");
+  expect((await store.session("practice"))?.session).toEqual(practice);
+  await store.deleteSession("source");
+  expect((await store.session("practice"))?.session.sourceSessionId).toBeNull();
+});
+it("deleting an unfinished session prevents late save and submission from resurrecting it", async () => {
+  const state = await store.startSession("lesson", { id: "s", now });
+  await store.deleteSession("s");
+  await expect(
+    store.updateSession(
+      "s",
+      state.version,
+      { kind: "input", text: "late" },
+      now,
+    ),
+  ).rejects.toThrow("训练不存在");
+  await expect(
+    store.updateSession(
+      "s",
+      state.version,
+      { kind: "submit", requestId: "late", attemptId: "late" },
+      now,
+    ),
+  ).rejects.toThrow("训练不存在");
+  expect(await store.sessions("lesson")).toEqual([]);
+  expect(await store.lesson("lesson")).toEqual(lesson());
+});
 it("rejects stale answering writes and keeps sticky hint and newest input", async () => {
   await store.startSession("lesson", { id: "s", now });
   await store.updateSession("s", 0, { kind: "hint", visible: true }, now);

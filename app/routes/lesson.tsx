@@ -1,18 +1,11 @@
 import { useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
-import {
-  Alert,
-  Button,
-  Card,
-  Group,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
+import { Link, useNavigate, useRevalidator } from "react-router";
+import { Alert, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { store } from "../adapters/storage";
 import { points } from "../core/lesson";
 import { trainingModule } from "../languages/registry";
 import { errorMessage, LoadError } from "../components/feedback";
+import { DeleteSession } from "../components/delete-session";
 import type { Route } from "./+types/lesson";
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -30,6 +23,7 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
 export default function Lesson({ loaderData }: Route.ComponentProps) {
   const { lesson, error } = loaderData;
   const navigate = useNavigate();
+  const revalidator = useRevalidator();
   const [busy, setBusy] = useState(false),
     [failure, setFailure] = useState<string>();
   const lock = useRef(false),
@@ -103,22 +97,37 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
         <Stack gap="xs">
           <Title order={2}>训练记录</Title>
           {loaderData.sessions.map((session) => (
-            <Group key={session.id} justify="space-between">
+            <Group
+              key={session.id}
+              justify="space-between"
+              data-session-id={session.id}
+            >
               <Text>
                 {new Date(session.updatedAt).toLocaleString()} ·{" "}
                 {session.status === "completed" ? "已完成" : "未完成"}
               </Text>
-              <Button
-                component={Link}
-                variant="light"
-                to={
-                  session.status === "completed"
-                    ? `/results/${session.id}`
-                    : `/training/${session.id}`
-                }
-              >
-                {session.status === "completed" ? "查看结果" : "继续训练"}
-              </Button>
+              <Group gap="xs">
+                <Button
+                  component={Link}
+                  variant="light"
+                  to={
+                    session.status === "completed"
+                      ? `/results/${session.id}`
+                      : `/training/${session.id}`
+                  }
+                >
+                  {session.status === "completed" ? "查看结果" : "继续训练"}
+                </Button>
+                <DeleteSession
+                  session={session}
+                  lessonTitle={lesson.title}
+                  hasPractice={loaderData.sessions.some(
+                    (item) => item.sourceSessionId === session.id,
+                  )}
+                  disabled={busy || revalidator.state !== "idle"}
+                  onDeleted={() => revalidator.revalidate()}
+                />
+              </Group>
             </Group>
           ))}
         </Stack>
