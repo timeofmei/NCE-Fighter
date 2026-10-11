@@ -10,7 +10,7 @@ import {
   Stack,
   Text,
   Title,
-  Tooltip,
+  Popover,
   UnstyledButton,
 } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
@@ -94,42 +94,50 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
         <Title order={1} className="break-text lesson-title">
           {lesson.title || "未命名课文"}
         </Title>
-        <Tooltip label={clipboard.copied ? "已复制" : "复制全部课文"}>
-          <ActionIcon
-            size="lg"
-            variant="subtle"
-            aria-label={clipboard.copied ? "已复制全部课文" : "复制全部课文"}
-            style={{ flexShrink: 0 }}
-            onClick={() => clipboard.copy(lesson.body)}
-          >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+        <Popover
+          opened={clipboard.copied || !!clipboard.error}
+          onDismiss={clipboard.reset}
+          position="bottom-end"
+          withArrow
+          withRoles={false}
+        >
+          <Popover.Target>
+            <ActionIcon
+              size="lg"
+              variant="subtle"
+              aria-label={clipboard.copied ? "已复制全部课文" : "复制全部课文"}
+              style={{ flexShrink: 0 }}
+              onClick={() => clipboard.copy(lesson.body)}
             >
-              {clipboard.copied ? (
-                <path d="m5 12 4 4L19 6" />
-              ) : (
-                <>
-                  <rect x="8" y="8" width="12" height="12" rx="2" />
-                  <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
-                </>
-              )}
-            </svg>
-          </ActionIcon>
-        </Tooltip>
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                {clipboard.copied ? (
+                  <path d="m5 12 4 4L19 6" />
+                ) : (
+                  <>
+                    <rect x="8" y="8" width="12" height="12" rx="2" />
+                    <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+                  </>
+                )}
+              </svg>
+            </ActionIcon>
+          </Popover.Target>
+          <Popover.Dropdown>
+            <Text size="sm" role={clipboard.error ? "alert" : "status"}>
+              {clipboard.error ? "复制失败，请重试。" : "已复制全部课文"}
+            </Text>
+          </Popover.Dropdown>
+        </Popover>
       </Group>
-      {clipboard.error && (
-        <Alert color="red" role="alert">
-          复制失败，请重试。
-        </Alert>
-      )}
       <Card withBorder>
         <Stack>
           {lesson.sentences.map((sentence) => (

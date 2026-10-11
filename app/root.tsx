@@ -8,6 +8,7 @@ import {
   Image,
   Loader,
   MantineProvider,
+  Modal,
   Select,
   Text,
   TextInput,
@@ -36,6 +37,7 @@ const theme = createTheme({
     Button: Button.extend({ styles: { root: { minHeight: 44 } } }),
     TextInput: TextInput.extend({ styles: { input: { minHeight: 44 } } }),
     Select: Select.extend({ styles: { input: { minHeight: 44 } } }),
+    Modal: Modal.extend({ defaultProps: { centered: true } }),
   },
 });
 export function Layout({ children }: { children: ReactNode }) {

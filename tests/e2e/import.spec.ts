@@ -74,6 +74,7 @@ test("language gate, saved draft refresh, line editing, immutable detail and lib
   await expect(
     page.getByRole("button", { name: "已复制全部课文" }),
   ).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("已复制全部课文");
   expect(
     (await page.evaluate(() => navigator.clipboard.readText())).replace(
       /\r\n/g,
