@@ -23,6 +23,7 @@ import {
   useRouteError,
 } from "react-router";
 import type { ReactNode } from "react";
+import { Analytics } from "@vercel/analytics/react";
 
 const theme = createTheme({
   primaryColor: "teal",
@@ -58,6 +59,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </MantineProvider>
         <ScrollRestoration />
         <Scripts />
+        <Analytics mode={import.meta.env.PROD ? "production" : "development"} />
       </body>
     </html>
   );
