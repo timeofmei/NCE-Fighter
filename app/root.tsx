@@ -50,7 +50,13 @@ export function Layout({ children }: { children: ReactNode }) {
         <MantineProvider theme={theme} forceColorScheme="light">
           <Container size="md" py="lg">
             <Group mb="xl">
-              <Anchor component={Link} to="/library" fw={800} size="xl">
+              <Anchor
+                component={Link}
+                to="/library"
+                fw={800}
+                size="xl"
+                underline="never"
+              >
                 NCE Fighter
               </Anchor>
             </Group>

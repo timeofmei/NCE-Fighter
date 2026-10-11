@@ -71,6 +71,31 @@ test("invalid line, input limits and safe text rendering", async ({ page }) => {
   await expect(
     page.getByRole("textbox", { name: "正文", exact: true }),
   ).toBeFocused();
+  const prefix = "😀 Valid sentence.\n".repeat(40);
+  await fill(page, prefix + "!!!\nLast sentence.");
+  const editor = page.getByRole("textbox", { name: "正文", exact: true });
+  await editor.evaluate((element: HTMLTextAreaElement) => {
+    element.scrollTop = 0;
+  });
+  await page.getByRole("button", { name: "定位第 41 行" }).click();
+  await expect(editor).toBeFocused();
+  const located = await editor.evaluate((element: HTMLTextAreaElement) => {
+    const styles = getComputedStyle(element);
+    const lineHeight = parseFloat(styles.lineHeight);
+    const targetTop = parseFloat(styles.paddingTop) + 40 * lineHeight;
+    return {
+      start: element.selectionStart,
+      end: element.selectionEnd,
+      visible:
+        targetTop >= element.scrollTop &&
+        targetTop + lineHeight <= element.scrollTop + element.clientHeight,
+    };
+  });
+  expect(located).toEqual({
+    start: prefix.length,
+    end: prefix.length + 3,
+    visible: true,
+  });
   await fill(page, "😀".repeat(20_000) + "a");
   await page.getByRole("button", { name: "保存草稿", exact: true }).click();
   await expect(

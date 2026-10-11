@@ -166,15 +166,27 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
     }
   };
   const locate = (line: number) => {
+    const element = editor.current;
+    if (!element) return;
     const normalized = form.body.replace(/\r\n?/g, "\n");
     const start = lines(normalized)
       .slice(0, line - 1)
       .reduce((total, text) => total + text.length + 1, 0);
-    editor.current?.focus();
-    editor.current?.setSelectionRange(
+    element.focus({ preventScroll: true });
+    element.setSelectionRange(
       start,
       start + (lines(normalized)[line - 1]?.length ?? 0),
     );
+    const styles = getComputedStyle(element);
+    const lineHeight = parseFloat(styles.lineHeight);
+    element.scrollTop = Math.max(
+      0,
+      parseFloat(styles.paddingTop) +
+        (line - 1) * lineHeight -
+        (element.clientHeight - lineHeight) / 2,
+    );
+    element.scrollLeft = 0;
+    element.scrollIntoView({ block: "nearest", inline: "nearest" });
   };
   return (
     <Stack
