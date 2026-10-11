@@ -14,6 +14,8 @@ NCE Fighter 是一个面向多语言课文记忆训练的响应式 Web 项目。
 - [验收标准与开发里程碑](doc/DELIVERY_PLAN.md)：核心验收与开发顺序。
 - [Web 本地处理与技术约束](doc/WEB_LOCAL_PROCESSING.md)：PDF、OCR、ASR、模型资源与部署。
 - [文档组织与开发流程](doc/DEVELOPMENT_WORKFLOW.md)：文档职责、阶段交付、审核与验收流程。
+- [工程开发指南](doc/DEVELOPMENT.md)：技术栈、目录、存储与开发验证方案。
+- [阶段 01：文本导入](doc/stages/01-text-import.md)：当前待审核的实施与用户验收计划。
 - [协作与 Git 规则](AGENTS.md)：文件编辑、提交和合并要求。
 
 ## License
