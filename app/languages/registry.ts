@@ -1,3 +1,4 @@
+import type { TrainingLanguage } from "../core/comparison";
 import type { Registry } from "../core/lesson";
 import { english } from "./english";
 export const registry: Registry = {
@@ -19,6 +20,14 @@ export function trainingModule(
   languageId: string,
   ref?: Parameters<Registry["resolve"]>[1],
 ) {
-  registry.resolve(languageId, ref);
-  return english;
+  const module = registry.resolve(languageId, ref) as typeof english &
+    Partial<TrainingLanguage>;
+  if (
+    !module.capabilities.training ||
+    !module.prepare ||
+    !module.comparePrepared ||
+    !module.buildHint
+  )
+    throw new Error("此语言的训练模块不可用。");
+  return module as TrainingLanguage;
 }

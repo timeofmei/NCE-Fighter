@@ -105,6 +105,7 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
     const issues = checkLimits(form.body);
     if (issues.length) throw new Error(issues[0].message);
     return {
+      storageVersion: initial?.storageVersion ?? 0,
       schemaVersion: 1,
       id,
       ...form,
@@ -153,7 +154,7 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
           sentenceId: (order) => `${id}:sentence:${order}`,
           now: new Date().toISOString(),
         });
-      await store.confirm(id, attempt.current);
+      await store.confirm(id, attempt.current, initial?.storageVersion ?? 0);
       bypass.current = true;
       setReview(false);
       await navigate(`/lessons/${encodeURIComponent(id)}`);

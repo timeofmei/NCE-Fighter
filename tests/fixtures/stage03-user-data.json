@@ -1,0 +1,878 @@
+{
+  "app": "nce-fighter",
+  "schemaVersion": 1,
+  "system": {
+    "name": null,
+    "version": null
+  },
+  "drafts": [
+    {
+      "schemaVersion": 1,
+      "id": "f47d30f7-7c46-460a-bb81-9844f29ee807",
+      "languageId": "en",
+      "moduleRef": {
+        "moduleId": "english-text-import",
+        "moduleVersion": "1.0.0",
+        "profileVersion": "1.0.0"
+      },
+      "title": "Unconfirmed sample",
+      "body": "Lesson 1\nFirst sentence.\nLesson 2\nSecond sentence.",
+      "sourceRefs": [],
+      "boundaryWarnings": [],
+      "sentences": [
+        {
+          "order": 0,
+          "start": 0,
+          "end": 8,
+          "id": "draft-s0"
+        },
+        {
+          "order": 1,
+          "start": 9,
+          "end": 24,
+          "id": "draft-s1"
+        },
+        {
+          "order": 2,
+          "start": 25,
+          "end": 33,
+          "id": "draft-s2"
+        },
+        {
+          "order": 3,
+          "start": 34,
+          "end": 50,
+          "id": "draft-s3"
+        }
+      ],
+      "updatedAt": "2026-10-11T00:00:00Z"
+    }
+  ],
+  "lessons": [
+    {
+      "schemaVersion": 1,
+      "lessonId": "f47d30f7-7c46-460a-bb81-9844f29ee801",
+      "revisionId": "f47d30f7-7c46-460a-bb81-9844f29ee802",
+      "languageId": "en",
+      "moduleRef": {
+        "moduleId": "english-text-import",
+        "moduleVersion": "1.0.0",
+        "profileVersion": "1.0.0"
+      },
+      "title": "Stage 03 sample",
+      "body": "I had a very good seat.\nDon't stop.\nHello,world!",
+      "sentences": [
+        {
+          "order": 0,
+          "start": 0,
+          "end": 23,
+          "id": "s0"
+        },
+        {
+          "order": 1,
+          "start": 24,
+          "end": 35,
+          "id": "s1"
+        },
+        {
+          "order": 2,
+          "start": 36,
+          "end": 48,
+          "id": "s2"
+        }
+      ],
+      "confirmedAt": "2026-10-11T00:00:00Z"
+    }
+  ],
+  "sessions": [
+    {
+      "generation": 0,
+      "schemaVersion": 1,
+      "id": "f47d30f7-7c46-460a-bb81-9844f29ee803",
+      "lessonId": "f47d30f7-7c46-460a-bb81-9844f29ee801",
+      "lessonRevisionId": "f47d30f7-7c46-460a-bb81-9844f29ee802",
+      "languageId": "en",
+      "moduleRef": {
+        "moduleId": "english-text-import",
+        "moduleVersion": "1.0.0",
+        "profileVersion": "1.0.0"
+      },
+      "comparisonProfileId": "english-words-v1",
+      "textDirection": "ltr",
+      "mode": "sentence_dictation",
+      "inputKind": "keyboard",
+      "recognition": null,
+      "taskId": null,
+      "status": "completed",
+      "sentenceIds": [
+        "s0",
+        "s1",
+        "s2"
+      ],
+      "index": 2,
+      "input": "",
+      "hintVisible": false,
+      "hintUsed": false,
+      "answerSeen": true,
+      "attempts": [
+        {
+          "id": "attempt-0",
+          "requestId": "skip-0",
+          "sentenceId": "s0",
+          "rawText": "",
+          "confirmedText": "",
+          "hintUsed": false,
+          "answerSeenBeforeAttempt": false,
+          "status": "skipped",
+          "inputKind": "keyboard",
+          "recognition": null,
+          "createdAt": "2026-10-11T00:00:00Z",
+          "result": null
+        },
+        {
+          "id": "attempt-1",
+          "requestId": "skip-1",
+          "sentenceId": "s1",
+          "rawText": "",
+          "confirmedText": "",
+          "hintUsed": false,
+          "answerSeenBeforeAttempt": false,
+          "status": "skipped",
+          "inputKind": "keyboard",
+          "recognition": null,
+          "createdAt": "2026-10-11T00:00:00Z",
+          "result": null
+        },
+        {
+          "id": "attempt-2",
+          "requestId": "skip-2",
+          "sentenceId": "s2",
+          "rawText": "",
+          "confirmedText": "",
+          "hintUsed": false,
+          "answerSeenBeforeAttempt": false,
+          "status": "skipped",
+          "inputKind": "keyboard",
+          "recognition": null,
+          "createdAt": "2026-10-11T00:00:00Z",
+          "result": null
+        }
+      ],
+      "version": 6,
+      "createdAt": "2026-10-11T00:00:00Z",
+      "updatedAt": "2026-10-11T00:00:00Z",
+      "completedAt": "2026-10-11T00:00:00Z",
+      "sourceSessionId": null
+    },
+    {
+      "generation": 0,
+      "schemaVersion": 1,
+      "id": "f47d30f7-7c46-460a-bb81-9844f29ee804",
+      "lessonId": "f47d30f7-7c46-460a-bb81-9844f29ee801",
+      "lessonRevisionId": "f47d30f7-7c46-460a-bb81-9844f29ee802",
+      "languageId": "en",
+      "moduleRef": {
+        "moduleId": "english-text-import",
+        "moduleVersion": "1.0.0",
+        "profileVersion": "1.0.0"
+      },
+      "comparisonProfileId": "english-words-v1",
+      "textDirection": "ltr",
+      "mode": "full_dictation",
+      "inputKind": "keyboard",
+      "recognition": null,
+      "taskId": null,
+      "status": "completed",
+      "sentenceIds": [
+        "s0",
+        "s1",
+        "s2"
+      ],
+      "index": 0,
+      "input": "I had a very good seat Hello world",
+      "hintVisible": false,
+      "hintUsed": false,
+      "answerSeen": true,
+      "attempts": [
+        {
+          "id": "full-attempt",
+          "requestId": "full-submit",
+          "sentenceId": null,
+          "rawText": "I had a very good seat Hello world",
+          "confirmedText": "I had a very good seat Hello world",
+          "hintUsed": false,
+          "answerSeenBeforeAttempt": false,
+          "status": "checked",
+          "inputKind": "keyboard",
+          "recognition": null,
+          "createdAt": "2026-10-11T00:00:00Z",
+          "result": {
+            "languageId": "en",
+            "moduleRef": {
+              "moduleId": "english-text-import",
+              "moduleVersion": "1.0.0",
+              "profileVersion": "1.0.0"
+            },
+            "comparisonProfileId": "english-words-v1",
+            "unitKind": "word",
+            "unitLabel": "词",
+            "accuracyLabel": "词序列准确度",
+            "operations": [
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "i",
+                  "displayText": "I",
+                  "sourceRange": {
+                    "start": 0,
+                    "end": 1
+                  },
+                  "sentenceId": "s0"
+                },
+                "actual": {
+                  "key": "i",
+                  "displayText": "I",
+                  "sourceRange": {
+                    "start": 0,
+                    "end": 1
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 0,
+                "actualIndex": 0,
+                "sentenceId": "s0"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "had",
+                  "displayText": "had",
+                  "sourceRange": {
+                    "start": 2,
+                    "end": 5
+                  },
+                  "sentenceId": "s0"
+                },
+                "actual": {
+                  "key": "had",
+                  "displayText": "had",
+                  "sourceRange": {
+                    "start": 2,
+                    "end": 5
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 1,
+                "actualIndex": 1,
+                "sentenceId": "s0"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "a",
+                  "displayText": "a",
+                  "sourceRange": {
+                    "start": 6,
+                    "end": 7
+                  },
+                  "sentenceId": "s0"
+                },
+                "actual": {
+                  "key": "a",
+                  "displayText": "a",
+                  "sourceRange": {
+                    "start": 6,
+                    "end": 7
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 2,
+                "actualIndex": 2,
+                "sentenceId": "s0"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "very",
+                  "displayText": "very",
+                  "sourceRange": {
+                    "start": 8,
+                    "end": 12
+                  },
+                  "sentenceId": "s0"
+                },
+                "actual": {
+                  "key": "very",
+                  "displayText": "very",
+                  "sourceRange": {
+                    "start": 8,
+                    "end": 12
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 3,
+                "actualIndex": 3,
+                "sentenceId": "s0"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "good",
+                  "displayText": "good",
+                  "sourceRange": {
+                    "start": 13,
+                    "end": 17
+                  },
+                  "sentenceId": "s0"
+                },
+                "actual": {
+                  "key": "good",
+                  "displayText": "good",
+                  "sourceRange": {
+                    "start": 13,
+                    "end": 17
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 4,
+                "actualIndex": 4,
+                "sentenceId": "s0"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "seat",
+                  "displayText": "seat",
+                  "sourceRange": {
+                    "start": 18,
+                    "end": 22
+                  },
+                  "sentenceId": "s0"
+                },
+                "actual": {
+                  "key": "seat",
+                  "displayText": "seat",
+                  "sourceRange": {
+                    "start": 18,
+                    "end": 22
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 5,
+                "actualIndex": 5,
+                "sentenceId": "s0"
+              },
+              {
+                "kind": "delete",
+                "reference": {
+                  "key": "dont",
+                  "displayText": "Don't",
+                  "sourceRange": {
+                    "start": 24,
+                    "end": 29
+                  },
+                  "sentenceId": "s1"
+                },
+                "actual": null,
+                "referenceIndex": 6,
+                "actualIndex": 6,
+                "sentenceId": "s1"
+              },
+              {
+                "kind": "delete",
+                "reference": {
+                  "key": "stop",
+                  "displayText": "stop",
+                  "sourceRange": {
+                    "start": 30,
+                    "end": 34
+                  },
+                  "sentenceId": "s1"
+                },
+                "actual": null,
+                "referenceIndex": 7,
+                "actualIndex": 6,
+                "sentenceId": "s1"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "hello",
+                  "displayText": "Hello",
+                  "sourceRange": {
+                    "start": 36,
+                    "end": 41
+                  },
+                  "sentenceId": "s2"
+                },
+                "actual": {
+                  "key": "hello",
+                  "displayText": "Hello",
+                  "sourceRange": {
+                    "start": 23,
+                    "end": 28
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 8,
+                "actualIndex": 6,
+                "sentenceId": "s2"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "world",
+                  "displayText": "world",
+                  "sourceRange": {
+                    "start": 42,
+                    "end": 47
+                  },
+                  "sentenceId": "s2"
+                },
+                "actual": {
+                  "key": "world",
+                  "displayText": "world",
+                  "sourceRange": {
+                    "start": 29,
+                    "end": 34
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 9,
+                "actualIndex": 7,
+                "sentenceId": "s2"
+              }
+            ],
+            "N": 10,
+            "S": 0,
+            "D": 2,
+            "I": 0,
+            "accuracy": 80,
+            "sentenceResults": [
+              {
+                "sentenceId": "s0",
+                "N": 6,
+                "S": 0,
+                "D": 0,
+                "I": 0,
+                "accuracy": 100
+              },
+              {
+                "sentenceId": "s1",
+                "N": 2,
+                "S": 0,
+                "D": 2,
+                "I": 0,
+                "accuracy": 0
+              },
+              {
+                "sentenceId": "s2",
+                "N": 2,
+                "S": 0,
+                "D": 0,
+                "I": 0,
+                "accuracy": 100
+              }
+            ]
+          }
+        }
+      ],
+      "version": 1,
+      "createdAt": "2026-10-11T00:00:00Z",
+      "updatedAt": "2026-10-11T00:00:00Z",
+      "completedAt": "2026-10-11T00:00:00Z",
+      "sourceSessionId": null
+    },
+    {
+      "generation": 0,
+      "schemaVersion": 1,
+      "id": "f47d30f7-7c46-460a-bb81-9844f29ee805",
+      "lessonId": "f47d30f7-7c46-460a-bb81-9844f29ee801",
+      "lessonRevisionId": "f47d30f7-7c46-460a-bb81-9844f29ee802",
+      "languageId": "en",
+      "moduleRef": {
+        "moduleId": "english-text-import",
+        "moduleVersion": "1.0.0",
+        "profileVersion": "1.0.0"
+      },
+      "comparisonProfileId": "english-words-v1",
+      "textDirection": "ltr",
+      "mode": "full_dictation",
+      "inputKind": "keyboard",
+      "recognition": null,
+      "taskId": null,
+      "status": "answering",
+      "sentenceIds": [
+        "s0",
+        "s1",
+        "s2"
+      ],
+      "index": 0,
+      "input": "I had a very good seat",
+      "hintVisible": false,
+      "hintUsed": false,
+      "answerSeen": false,
+      "attempts": [],
+      "version": 1,
+      "createdAt": "2026-10-11T00:00:00Z",
+      "updatedAt": "2026-10-11T00:00:00Z",
+      "completedAt": null,
+      "sourceSessionId": null
+    },
+    {
+      "generation": 0,
+      "schemaVersion": 1,
+      "id": "f47d30f7-7c46-460a-bb81-9844f29ee806",
+      "lessonId": "f47d30f7-7c46-460a-bb81-9844f29ee801",
+      "lessonRevisionId": "f47d30f7-7c46-460a-bb81-9844f29ee802",
+      "languageId": "en",
+      "moduleRef": {
+        "moduleId": "english-text-import",
+        "moduleVersion": "1.0.0",
+        "profileVersion": "1.0.0"
+      },
+      "comparisonProfileId": "english-words-v1",
+      "textDirection": "ltr",
+      "mode": "recitation",
+      "inputKind": "speech",
+      "recognition": {
+        "languageId": "en",
+        "sourceRef": "fixture:fixed-asr",
+        "rawTranscript": "I had a very good seat.\nDon't stop.\nHello,world!",
+        "editedTranscript": "I had a very good seat.\nDon't stop.\nHello,world!",
+        "wasEdited": false,
+        "warnings": [],
+        "providerMetadata": {
+          "provider": "fixed-test"
+        }
+      },
+      "taskId": null,
+      "status": "completed",
+      "sentenceIds": [
+        "s0",
+        "s1",
+        "s2"
+      ],
+      "index": 0,
+      "input": "I had a very good seat.\nDon't stop.\nHello,world!",
+      "hintVisible": false,
+      "hintUsed": false,
+      "answerSeen": true,
+      "attempts": [
+        {
+          "id": "speech-attempt",
+          "requestId": "speech-submit",
+          "sentenceId": null,
+          "rawText": "I had a very good seat.\nDon't stop.\nHello,world!",
+          "confirmedText": "I had a very good seat.\nDon't stop.\nHello,world!",
+          "hintUsed": false,
+          "answerSeenBeforeAttempt": false,
+          "status": "checked",
+          "inputKind": "speech",
+          "recognition": {
+            "languageId": "en",
+            "sourceRef": "fixture:fixed-asr",
+            "rawTranscript": "I had a very good seat.\nDon't stop.\nHello,world!",
+            "editedTranscript": "I had a very good seat.\nDon't stop.\nHello,world!",
+            "wasEdited": false,
+            "warnings": [],
+            "providerMetadata": {
+              "provider": "fixed-test"
+            }
+          },
+          "createdAt": "2026-10-11T00:00:00Z",
+          "result": {
+            "languageId": "en",
+            "moduleRef": {
+              "moduleId": "english-text-import",
+              "moduleVersion": "1.0.0",
+              "profileVersion": "1.0.0"
+            },
+            "comparisonProfileId": "english-words-v1",
+            "unitKind": "word",
+            "unitLabel": "词",
+            "accuracyLabel": "词序列准确度",
+            "operations": [
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "i",
+                  "displayText": "I",
+                  "sourceRange": {
+                    "start": 0,
+                    "end": 1
+                  },
+                  "sentenceId": "s0"
+                },
+                "actual": {
+                  "key": "i",
+                  "displayText": "I",
+                  "sourceRange": {
+                    "start": 0,
+                    "end": 1
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 0,
+                "actualIndex": 0,
+                "sentenceId": "s0"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "had",
+                  "displayText": "had",
+                  "sourceRange": {
+                    "start": 2,
+                    "end": 5
+                  },
+                  "sentenceId": "s0"
+                },
+                "actual": {
+                  "key": "had",
+                  "displayText": "had",
+                  "sourceRange": {
+                    "start": 2,
+                    "end": 5
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 1,
+                "actualIndex": 1,
+                "sentenceId": "s0"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "a",
+                  "displayText": "a",
+                  "sourceRange": {
+                    "start": 6,
+                    "end": 7
+                  },
+                  "sentenceId": "s0"
+                },
+                "actual": {
+                  "key": "a",
+                  "displayText": "a",
+                  "sourceRange": {
+                    "start": 6,
+                    "end": 7
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 2,
+                "actualIndex": 2,
+                "sentenceId": "s0"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "very",
+                  "displayText": "very",
+                  "sourceRange": {
+                    "start": 8,
+                    "end": 12
+                  },
+                  "sentenceId": "s0"
+                },
+                "actual": {
+                  "key": "very",
+                  "displayText": "very",
+                  "sourceRange": {
+                    "start": 8,
+                    "end": 12
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 3,
+                "actualIndex": 3,
+                "sentenceId": "s0"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "good",
+                  "displayText": "good",
+                  "sourceRange": {
+                    "start": 13,
+                    "end": 17
+                  },
+                  "sentenceId": "s0"
+                },
+                "actual": {
+                  "key": "good",
+                  "displayText": "good",
+                  "sourceRange": {
+                    "start": 13,
+                    "end": 17
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 4,
+                "actualIndex": 4,
+                "sentenceId": "s0"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "seat",
+                  "displayText": "seat",
+                  "sourceRange": {
+                    "start": 18,
+                    "end": 22
+                  },
+                  "sentenceId": "s0"
+                },
+                "actual": {
+                  "key": "seat",
+                  "displayText": "seat",
+                  "sourceRange": {
+                    "start": 18,
+                    "end": 22
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 5,
+                "actualIndex": 5,
+                "sentenceId": "s0"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "dont",
+                  "displayText": "Don't",
+                  "sourceRange": {
+                    "start": 24,
+                    "end": 29
+                  },
+                  "sentenceId": "s1"
+                },
+                "actual": {
+                  "key": "dont",
+                  "displayText": "Don't",
+                  "sourceRange": {
+                    "start": 24,
+                    "end": 29
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 6,
+                "actualIndex": 6,
+                "sentenceId": "s1"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "stop",
+                  "displayText": "stop",
+                  "sourceRange": {
+                    "start": 30,
+                    "end": 34
+                  },
+                  "sentenceId": "s1"
+                },
+                "actual": {
+                  "key": "stop",
+                  "displayText": "stop",
+                  "sourceRange": {
+                    "start": 30,
+                    "end": 34
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 7,
+                "actualIndex": 7,
+                "sentenceId": "s1"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "hello",
+                  "displayText": "Hello",
+                  "sourceRange": {
+                    "start": 36,
+                    "end": 41
+                  },
+                  "sentenceId": "s2"
+                },
+                "actual": {
+                  "key": "hello",
+                  "displayText": "Hello",
+                  "sourceRange": {
+                    "start": 36,
+                    "end": 41
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 8,
+                "actualIndex": 8,
+                "sentenceId": "s2"
+              },
+              {
+                "kind": "match",
+                "reference": {
+                  "key": "world",
+                  "displayText": "world",
+                  "sourceRange": {
+                    "start": 42,
+                    "end": 47
+                  },
+                  "sentenceId": "s2"
+                },
+                "actual": {
+                  "key": "world",
+                  "displayText": "world",
+                  "sourceRange": {
+                    "start": 42,
+                    "end": 47
+                  },
+                  "sentenceId": "input"
+                },
+                "referenceIndex": 9,
+                "actualIndex": 9,
+                "sentenceId": "s2"
+              }
+            ],
+            "N": 10,
+            "S": 0,
+            "D": 0,
+            "I": 0,
+            "accuracy": 100,
+            "sentenceResults": [
+              {
+                "sentenceId": "s0",
+                "N": 6,
+                "S": 0,
+                "D": 0,
+                "I": 0,
+                "accuracy": 100
+              },
+              {
+                "sentenceId": "s1",
+                "N": 2,
+                "S": 0,
+                "D": 0,
+                "I": 0,
+                "accuracy": 100
+              },
+              {
+                "sentenceId": "s2",
+                "N": 2,
+                "S": 0,
+                "D": 0,
+                "I": 0,
+                "accuracy": 100
+              }
+            ]
+          }
+        }
+      ],
+      "version": 5,
+      "createdAt": "2026-10-11T00:00:00Z",
+      "updatedAt": "2026-10-11T00:00:00Z",
+      "completedAt": "2026-10-11T00:00:00Z",
+      "sourceSessionId": null
+    }
+  ]
+}

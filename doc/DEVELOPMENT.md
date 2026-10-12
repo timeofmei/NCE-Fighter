@@ -37,7 +37,9 @@ core 不依赖 React、DOM、IndexedDB 或模型运行时；语言模块不依�
 
 数据契约唯一维护在[核心引擎](CORE_ENGINE.md#26-逐行确认与持久化契约)。工程使用原生 IndexedDB 的集中适配器，不在各页面分散操作数据库。数据库版本与导出 schemaVersion 分开维护。IndexedDB 保存 JavaScript 字符串，不指定文本文件编码；项目源码、文档和后续 JSON 导出使用 UTF-8。
 
-路由：/library 为课文库，/import 为导入与草稿编辑，/lessons/:lessonId 为只读详情，/training/:sessionId 为逐句训练，/results/:sessionId 为保存的训练结果；根路径进入课文库。课文和会话 ID 由浏览器生成，详情与训练通过客户端读取。缺失 ID 提示不存在，存储读取失败提示重试；两者不得混同。
+路由：/library 为课文库，/import 为导入与草稿编辑，/lessons/:lessonId 为只读详情，/training/:sessionId 共用逐句与全文键盘训练页面，/results/:sessionId 为保存的训练结果；根路径进入课文库。课文和会话 ID 由浏览器生成，详情与训练通过客户端读取。缺失 ID 提示不存在，存储读取失败提示重试；两者不得混同。
+
+统一 JSON 结构及依赖校验位于 app/core/user-data.ts；IndexedDbStore.exportData、checkImport、importData 使用同一组对象仓库的事务。会话 generation 与 version、课文对象 storageVersion 是写入并发控制字段，恢复时递增以使旧页面的写入失效，业务内容与历史结果按文件恢复。页面更新会话时传入当前 generation 与 version；校对页保存或确认时保留加载时的 storageVersion。识别接口位于 app/core/recognition.ts，固定 OCR／ASR 适配器只存在于测试中，不注册为应用输入能力。
 
 本地数据限定于当前浏览器及站点来源，不承诺跨设备恢复。静态部署须让页面 URL 回退到 index.html，同时保留真实资源请求的正常失败状态；相关配置和断网能力在发布阶段独立验收。
 
@@ -76,4 +78,4 @@ core 不依赖 React、DOM、IndexedDB 或模型运行时；语言模块不依�
 
 lint 检查 core/languages 对 UI、路由、存储及浏览器全局的依赖边界。test:e2e 自动启动独立的生产预览和开发故障验证服务；服务配置见 [playwright.config.ts](../playwright.config.ts)，运行时配置的端口须空闲。静态部署只发布 build/client，不需要构建时生成的 server 中间产物，也不需要业务服务器；生产托管的路由回退、真实资源 404 与断网能力仍在发布阶段验收。
 
-英语比较性能可通过 `node scripts/benchmark-comparison.mjs` 测量，脚本分别输出两份文本分析和对齐聚合的 p95。容量限制维护在[第二阶段交付记录](stages/02-sentence-training.md#交付记录)。Unicode 大小写折叠表使用 Unicode 17.0 数据；许可见 [licenses/UNICODE.txt](../licenses/UNICODE.txt)。
+比较性能可通过 `node scripts/benchmark-comparison.mjs` 测量，脚本对英语词模块和仅用于契约验证的字素簇模块分别输出两份文本分析和对齐聚合的 p95。单篇容量限制维护在[第二阶段交付记录](stages/02-sentence-training.md#交付记录)，第三阶段实测见[阶段 03](stages/03-core-completion.md#自动验证与性能记录)；用户数据总量与 JSON 不设预定容量上限。Unicode 大小写折叠表使用 Unicode 17.0 数据；许可见 [licenses/UNICODE.txt](../licenses/UNICODE.txt)。

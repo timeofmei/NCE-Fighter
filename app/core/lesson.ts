@@ -19,6 +19,7 @@ export interface Sentence {
   end: number;
 }
 export interface Draft {
+  storageVersion?: number;
   schemaVersion: 1;
   id: string;
   languageId: string;
@@ -31,6 +32,7 @@ export interface Draft {
   updatedAt: string;
 }
 export interface Lesson {
+  storageVersion?: number;
   schemaVersion: 1;
   lessonId: string;
   revisionId: string;
@@ -138,11 +140,21 @@ function base(value: unknown, registry: Registry) {
     typeof record.body !== "string"
   )
     throw new Error("本地数据字段损坏。");
+  if (
+    !record.languageId ||
+    (record.storageVersion !== undefined &&
+      (!Number.isSafeInteger(record.storageVersion) ||
+        (record.storageVersion as number) < 0))
+  )
+    throw new Error("本地数据字段损坏。");
   const ref = object(record.moduleRef);
   if (
     typeof ref.moduleId !== "string" ||
+    !ref.moduleId ||
     typeof ref.moduleVersion !== "string" ||
-    typeof ref.profileVersion !== "string"
+    !ref.moduleVersion ||
+    typeof ref.profileVersion !== "string" ||
+    !ref.profileVersion
   )
     throw new Error("语言版本字段损坏。");
   const language = registry.resolve(

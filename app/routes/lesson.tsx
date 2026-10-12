@@ -26,6 +26,8 @@ import type { Route } from "./+types/lesson";
 const trainingModes: Record<Session["mode"], { label: string; color: string }> =
   {
     sentence_dictation: { label: "逐句默写", color: "blue" },
+    full_dictation: { label: "全文默写", color: "#660874" },
+    recitation: { label: "整篇背诵", color: "grape" },
   };
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -48,7 +50,9 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
   const [busy, setBusy] = useState(false),
     [failure, setFailure] = useState<string>();
   const lock = useRef(false),
-    host = useRef<{ id: string; now: string } | undefined>(undefined);
+    host = useRef<{ id: string; now: string; mode: string } | undefined>(
+      undefined,
+    );
   useEffect(() => {
     if (lesson) window.getSelection()?.removeAllRanges();
   }, [lesson?.lessonId]);
@@ -70,16 +74,20 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
     unavailable = errorMessage(error);
   }
   const body = points(lesson.body);
-  const start = async () => {
+  const start = async (mode: "sentence_dictation" | "full_dictation") => {
     if (lock.current) return;
     lock.current = true;
     setBusy(true);
     try {
-      host.current ??= {
-        id: crypto.randomUUID(),
-        now: new Date().toISOString(),
-      };
-      const session = await store.startSession(lesson.lessonId, host.current);
+      if (!host.current || host.current.mode !== mode)
+        host.current = {
+          mode,
+          id: crypto.randomUUID(),
+          now: new Date().toISOString(),
+        };
+      const session = await store.startSession(lesson.lessonId, host.current, {
+        mode,
+      });
       await navigate(`/training/${session.id}`);
     } catch (error) {
       setFailure(errorMessage(error));
@@ -169,8 +177,18 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
         </Stack>
       </Card>
       <Group>
-        <Button disabled={busy || !!unavailable} onClick={() => void start()}>
+        <Button
+          disabled={busy || !!unavailable}
+          onClick={() => void start("sentence_dictation")}
+        >
           逐句默写
+        </Button>
+        <Button
+          disabled={busy || !!unavailable}
+          color="#660874"
+          onClick={() => void start("full_dictation")}
+        >
+          全文默写
         </Button>
         <Button component={Link} to="/library" variant="light">
           返回课文库
@@ -187,7 +205,9 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
                 <Group gap="xs">
                   <Badge
                     color={trainingModes[session.mode].color}
-                    variant="light"
+                    variant={
+                      session.mode === "full_dictation" ? "filled" : "light"
+                    }
                     size="lg"
                   >
                     {trainingModes[session.mode].label}

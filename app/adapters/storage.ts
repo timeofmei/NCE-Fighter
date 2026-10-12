@@ -1,4 +1,9 @@
 import {
+  historicalRegistry,
+  validateUserData,
+  type UserData,
+} from "../core/user-data";
+import {
   validateDraft,
   validateLesson,
   type Draft,
@@ -17,6 +22,12 @@ import {
 } from "../core/training";
 
 export const DATABASE_NAME = "nce-fighter";
+const advanceVersion = (...versions: number[]) => {
+  const next = Math.max(...versions) + 1;
+  if (!Number.isSafeInteger(next))
+    throw new Error("写入版本无法更新，请检查导入数据。");
+  return next;
+};
 const request = <T>(req: IDBRequest<T>) =>
   new Promise<T>((resolve, reject) => {
     req.onsuccess = () => resolve(req.result);
@@ -119,7 +130,7 @@ export class IndexedDbStore implements LessonStore {
         request(tx.objectStore("lessons").getAll()),
       ]);
       return {
-        drafts: drafts.map((draft) => validateDraft(draft, registry)),
+        drafts: drafts.map((draft) => validateDraft(draft, historicalRegistry)),
         lessons: lessons.map((lesson) => this.historicalLesson(lesson)),
       };
     });
@@ -127,7 +138,9 @@ export class IndexedDbStore implements LessonStore {
   async draft(id: string) {
     return this.transaction(["drafts"], "readonly", async (tx) => {
       const value: unknown = await request(tx.objectStore("drafts").get(id));
-      return value === undefined ? undefined : validateDraft(value, registry);
+      return value === undefined
+        ? undefined
+        : validateDraft(value, historicalRegistry);
     });
   }
   async lesson(id: string) {
@@ -139,10 +152,15 @@ export class IndexedDbStore implements LessonStore {
     });
   }
   async saveDraft(draft: Draft) {
-    validateDraft(draft, registry);
+    validateDraft(draft, historicalRegistry);
     return this.transaction(["drafts", "lessons"], "readwrite", async (tx) => {
       if (await request(tx.objectStore("lessons").get(draft.id)))
         throw new Error("课文已确认，请新建导入。");
+      const previous: Draft | undefined = await request(
+        tx.objectStore("drafts").get(draft.id),
+      );
+      if ((previous?.storageVersion ?? 0) !== (draft.storageVersion ?? 0))
+        throw new Error("草稿已在其他窗口更新，请刷新后继续。");
       await request(tx.objectStore("drafts").put(draft));
     });
   }
@@ -151,11 +169,16 @@ export class IndexedDbStore implements LessonStore {
       await request(tx.objectStore("drafts").delete(id));
     });
   }
-  async confirm(draftId: string, lesson: Lesson) {
+  async confirm(draftId: string, lesson: Lesson, expectedStorageVersion = 0) {
     validateLesson(lesson, registry);
     if (draftId !== lesson.lessonId)
       throw new Error("保存信息有误，请重新打开草稿。");
     return this.transaction(["drafts", "lessons"], "readwrite", async (tx) => {
+      const draft: Draft | undefined = await request(
+        tx.objectStore("drafts").get(draftId),
+      );
+      if ((draft?.storageVersion ?? 0) !== expectedStorageVersion)
+        throw new Error("草稿已在其他窗口更新，请刷新后继续。");
       const existing: unknown = await request(
         tx.objectStore("lessons").get(lesson.lessonId),
       );
@@ -223,6 +246,8 @@ export class IndexedDbStore implements LessonStore {
       const source = validateSession(value, lesson);
       if (
         source.status !== "completed" ||
+        source.mode !== "sentence_dictation" ||
+        session.mode !== "sentence_dictation" ||
         JSON.stringify(summarize(source).wrongIds) !==
           JSON.stringify(session.sentenceIds)
       )
@@ -231,25 +256,7 @@ export class IndexedDbStore implements LessonStore {
     return session;
   }
   private historicalLesson(value: Lesson): Lesson {
-    try {
-      registry.resolve(value.languageId, value.moduleRef);
-    } catch {
-      return this.validateHistoricalShape(value);
-    }
-    return validateLesson(value, registry);
-  }
-  private validateHistoricalShape(value: Lesson): Lesson {
-    return validateLesson(value, {
-      list: () => [],
-      resolve: (languageId, ref) => ({
-        languageId,
-        moduleRef: ref!,
-        label: "",
-        textDirection: "ltr",
-        capabilities: { textImport: true, training: false },
-        countUnits: (text) => (text.trim() ? 1 : 0),
-      }),
-    });
+    return validateLesson(value, historicalRegistry);
   }
   async session(
     id: string,
@@ -270,7 +277,12 @@ export class IndexedDbStore implements LessonStore {
   async startSession(
     lessonId: string,
     host: { id: string; now: string },
-    options: { hint?: boolean; sourceSessionId?: string } = {},
+    options: {
+      mode?: Session["mode"];
+      inputKind?: Session["inputKind"];
+      hint?: boolean;
+      sourceSessionId?: string;
+    } = {},
   ): Promise<Session> {
     return this.transaction(
       ["sessions", "lessons"],
@@ -283,7 +295,10 @@ export class IndexedDbStore implements LessonStore {
         const existing = await request(tx.objectStore("sessions").get(host.id));
         if (existing) {
           const saved = validateSession(existing, lesson);
-          if (saved.sourceSessionId !== (options.sourceSessionId ?? null))
+          if (
+            saved.sourceSessionId !== (options.sourceSessionId ?? null) ||
+            saved.mode !== (options.mode ?? "sentence_dictation")
+          )
             throw new Error("训练标识冲突。");
           return saved;
         }
@@ -293,7 +308,11 @@ export class IndexedDbStore implements LessonStore {
             tx.objectStore("sessions").get(options.sourceSessionId),
           );
           const original = validateSession(source, lesson);
-          if (original.status !== "completed")
+          if (
+            original.status !== "completed" ||
+            original.mode !== "sentence_dictation" ||
+            (options.mode && options.mode !== "sentence_dictation")
+          )
             throw new Error("来源训练尚未完成。");
           sentenceIds = summarize(original).wrongIds;
         }
@@ -306,11 +325,122 @@ export class IndexedDbStore implements LessonStore {
       },
     );
   }
+  private snapshot(
+    tx: IDBTransaction,
+    system: UserData["system"],
+  ): Promise<UserData> {
+    return Promise.all([
+      request(tx.objectStore("drafts").getAll()),
+      request(tx.objectStore("lessons").getAll()),
+      request(tx.objectStore("sessions").getAll()),
+    ]).then(([drafts, lessons, sessions]) => ({
+      app: "nce-fighter",
+      schemaVersion: 1,
+      system,
+      drafts,
+      lessons,
+      sessions,
+    }));
+  }
+  async exportData(
+    system: UserData["system"] = { name: null, version: null },
+  ): Promise<UserData> {
+    return this.transaction(
+      ["drafts", "lessons", "sessions"],
+      "readonly",
+      async (tx) => validateUserData(await this.snapshot(tx, system)),
+    );
+  }
+  async checkImport(value: unknown): Promise<UserData> {
+    return this.transaction(
+      ["drafts", "lessons", "sessions"],
+      "readonly",
+      async (tx) =>
+        validateUserData(
+          value,
+          await this.snapshot(tx, { name: null, version: null }),
+        ),
+    );
+  }
+  async importData(value: unknown): Promise<void> {
+    const incoming: unknown = structuredClone(value);
+    return this.transaction(
+      ["drafts", "lessons", "sessions"],
+      "readwrite",
+      async (tx) => {
+        const current = await this.snapshot(tx, { name: null, version: null });
+        const data = validateUserData(incoming, current);
+        const lessonVersions = new Map([
+          ...current.drafts.map((d) => [d.id, d.storageVersion ?? 0] as const),
+          ...current.lessons.map(
+            (l) => [l.lessonId, l.storageVersion ?? 0] as const,
+          ),
+        ]);
+        const previousSessions = new Map(
+          current.sessions.map((s) => [s.id, s]),
+        );
+        for (const draft of data.drafts) {
+          await request(tx.objectStore("lessons").delete(draft.id));
+          await request(
+            tx.objectStore("drafts").put({
+              ...draft,
+              storageVersion: advanceVersion(
+                lessonVersions.get(draft.id) ?? 0,
+                draft.storageVersion ?? 0,
+              ),
+            }),
+          );
+        }
+        for (const lesson of data.lessons) {
+          await request(tx.objectStore("drafts").delete(lesson.lessonId));
+          await request(
+            tx.objectStore("lessons").put({
+              ...lesson,
+              storageVersion: advanceVersion(
+                lessonVersions.get(lesson.lessonId) ?? 0,
+                lesson.storageVersion ?? 0,
+              ),
+            }),
+          );
+        }
+        for (const session of data.sessions) {
+          const previous = previousSessions.get(session.id);
+          await request(
+            tx.objectStore("sessions").put({
+              ...session,
+              generation: advanceVersion(
+                previous?.generation ?? 0,
+                session.generation,
+              ),
+              version: advanceVersion(previous?.version ?? 0, session.version),
+            }),
+          );
+        }
+        // A restored lesson also invalidates writes from sessions left open in other tabs.
+        const changedLessons = new Set([
+          ...data.drafts.map((d) => d.id),
+          ...data.lessons.map((l) => l.lessonId),
+        ]);
+        const changedSessions = new Set(data.sessions.map((s) => s.id));
+        for (const s of current.sessions) {
+          if (!changedSessions.has(s.id) && changedLessons.has(s.lessonId))
+            await request(
+              tx.objectStore("sessions").put({
+                ...s,
+                generation: advanceVersion(s.generation),
+                version: advanceVersion(s.version),
+              }),
+            );
+        }
+      },
+    );
+  }
   async updateSession(
     id: string,
     expectedVersion: number,
     event: Event,
     now: string,
+    expectedGeneration = 0,
   ): Promise<Session> {
     return this.transaction(
       ["sessions", "lessons"],
@@ -326,6 +456,8 @@ export class IndexedDbStore implements LessonStore {
         if (!snapshot) throw new Error("训练课文缺失，记录已保留。");
         const lesson = this.historicalLesson(snapshot),
           state = await this.trainingRecord(tx, value, lesson);
+        if (state.generation !== expectedGeneration)
+          throw new Error("训练已导入或在其他窗口更新，请刷新后继续。");
         if (
           (event.kind === "submit" || event.kind === "skip") &&
           state.attempts.some((a) => a.requestId === event.requestId)

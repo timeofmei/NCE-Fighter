@@ -51,6 +51,15 @@ export default function Training({ loaderData }: Route.ComponentProps) {
       </Stack>
     );
   }
+  if (session.inputKind !== "keyboard")
+    return (
+      <Stack>
+        <Text>此训练仅支持查看已保存记录。</Text>
+        <Button component={Link} to={`/results/${session.id}`}>
+          查看已保存记录
+        </Button>
+      </Stack>
+    );
   return (
     <Trainer
       key={session.id}
@@ -73,12 +82,20 @@ function Trainer({
   const [session, setSession] = useState(initial),
     saved = useRef(initial);
   const [input, setInput] = useState(
-      initial.status === "checked" ? initial.input : "",
+      initial.mode !== "sentence_dictation" || initial.status === "checked"
+        ? initial.input
+        : "",
     ),
     draft = useRef(input);
   const [busy, setBusy] = useState(false),
     lock = useRef(false),
     composition = useRef(false);
+  const [savedNotice, setSavedNotice] = useState(false);
+  useEffect(() => {
+    if (!savedNotice) return;
+    const timer = window.setTimeout(() => setSavedNotice(false), 2500);
+    return () => window.clearTimeout(timer);
+  }, [savedNotice]);
   const [error, setError] = useState<string>();
   const failedEvent = useRef<Event | undefined>(undefined);
   const pending = useRef<
@@ -96,6 +113,7 @@ function Trainer({
       saved.current.version,
       event,
       new Date().toISOString(),
+      saved.current.generation,
     );
     saved.current = next;
     setSession(next);
@@ -113,6 +131,7 @@ function Trainer({
           setInput(next.input);
           pending.current = undefined;
         }
+        if (event?.kind === "save-draft") setSavedNotice(true);
         setError(undefined);
         failedEvent.current = undefined;
         if (target || next.status === "completed") {
@@ -146,6 +165,7 @@ function Trainer({
       };
     void operate(pending.current);
   };
+  const full = session.mode !== "sentence_dictation";
   const reference = sentenceText(lesson, session.sentenceIds[session.index]);
   const last = session.attempts
     .filter((a) => a.sentenceId === session.sentenceIds[session.index])
@@ -171,20 +191,22 @@ function Trainer({
           返回课文
         </Button>
       </Group>
-      <Group justify="space-between">
-        <Text>
-          {session.index + 1}/{session.sentenceIds.length}
-        </Text>
-        <Switch
-          label={`提示（${module.hintLabel}）`}
-          checked={session.hintVisible}
-          disabled={busy || session.status !== "answering"}
-          onChange={(e) =>
-            void operate({ kind: "hint", visible: e.currentTarget.checked })
-          }
-        />
-      </Group>
-      {session.status === "answering" && session.hintVisible && (
+      {!full && (
+        <Group justify="space-between">
+          <Text>
+            {session.index + 1}/{session.sentenceIds.length}
+          </Text>
+          <Switch
+            label={`提示（${module.hintLabel}）`}
+            checked={session.hintVisible}
+            disabled={busy || session.status !== "answering"}
+            onChange={(e) =>
+              void operate({ kind: "hint", visible: e.currentTarget.checked })
+            }
+          />
+        </Group>
+      )}
+      {!full && session.status === "answering" && session.hintVisible && (
         <Card withBorder>
           <Text dir={module.textDirection}>
             {module
@@ -199,9 +221,9 @@ function Trainer({
         </Card>
       )}
       <Textarea
-        label="本句默写"
+        label={full ? "全文默写" : "本句默写"}
         styles={{ input: { fontSize: 16 } }}
-        rows={8}
+        rows={full ? 16 : 8}
         value={input}
         readOnly={session.status !== "answering" || busy}
         dir={module.textDirection}
@@ -210,6 +232,7 @@ function Trainer({
           setInput(draft.current);
           pending.current = undefined;
           setError(undefined);
+          setSavedNotice(false);
         }}
         onKeyDown={(e) => {
           if (
@@ -224,6 +247,11 @@ function Trainer({
           }
         }}
       />
+      {savedNotice && (
+        <Text size="sm" role="status">
+          草稿已保存
+        </Text>
+      )}
       {error && (
         <Alert color="red" title="操作失败" role="alert">
           {error}
@@ -247,16 +275,29 @@ function Trainer({
       <Group className="actions">
         {session.status === "answering" ? (
           <>
+            {full && (
+              <Button
+                variant="light"
+                disabled={busy}
+                onClick={() =>
+                  void operate({ kind: "save-draft", text: draft.current })
+                }
+              >
+                保存草稿
+              </Button>
+            )}
             <Button disabled={busy} onClick={() => submit("submit")}>
-              提交本句
+              {full ? "提交全文" : "提交本句"}
             </Button>
-            <Button
-              variant="subtle"
-              disabled={busy}
-              onClick={() => submit("skip")}
-            >
-              跳过本句
-            </Button>
+            {!full && (
+              <Button
+                variant="subtle"
+                disabled={busy}
+                onClick={() => submit("skip")}
+              >
+                跳过本句
+              </Button>
+            )}
           </>
         ) : (
           <>

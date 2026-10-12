@@ -17,6 +17,7 @@ import { store } from "../adapters/storage";
 import { registry } from "../languages/registry";
 import { errorMessage, LoadError } from "../components/feedback";
 import { DeleteDraft } from "../components/delete-draft";
+import { UserDataDialog } from "../components/user-data-dialog";
 import { LessonCard } from "../components/lesson-card";
 import { formatTime } from "../components/format-time";
 import type { Route } from "./+types/library";
@@ -77,9 +78,12 @@ export default function Library({ loaderData }: Route.ComponentProps) {
     <Stack>
       <Group justify="space-between" wrap="nowrap">
         <Title order={1}>课文库</Title>
-        <Button variant="subtle" onClick={() => setHelpOpened(true)}>
-          帮助
-        </Button>
+        <Group gap="xs">
+          <UserDataDialog onImported={() => revalidator.revalidate()} />
+          <Button variant="subtle" onClick={() => setHelpOpened(true)}>
+            帮助
+          </Button>
+        </Group>
       </Group>
       <Modal
         opened={helpOpened}
