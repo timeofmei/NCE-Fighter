@@ -15,8 +15,8 @@ export const fileLimits = (
   mobile = matchMedia("(max-width: 600px)").matches,
 ) =>
   mobile
-    ? { bytes: 10 * 1024 * 1024, pages: 10, images: 5, pixels: 4_000_000 }
-    : { bytes: 50 * 1024 * 1024, pages: 50, images: 20, pixels: 12_000_000 };
+    ? { bytes: 10 * 1024 * 1024, pages: 10, images: 5 }
+    : { bytes: 50 * 1024 * 1024, pages: 50, images: 20 };
 export class LocalDocument {
   batch: FileBatch;
   pages: DocumentPage[] = [];
@@ -37,16 +37,17 @@ export class LocalDocument {
     };
   }
   async read(signal: AbortSignal, progress: (message: string) => void) {
-    if (
-      !this.files.length ||
-      this.files.reduce((sum, f) => sum + f.size, 0) > this.limit.bytes
-    )
-      throw new Error(
-        `所选文件总大小不能超过 ${this.limit.bytes / 1024 / 1024} MB。`,
-      );
+    if (!this.files.length) throw new Error("请选择 PDF 或图片。");
     const isPdf =
       this.files[0].type === "application/pdf" ||
       /\.pdf$/i.test(this.files[0].name);
+    if (
+      !isPdf &&
+      this.files.reduce((sum, f) => sum + f.size, 0) > this.limit.bytes
+    )
+      throw new Error(
+        `所选图片总大小不能超过 ${this.limit.bytes / 1024 / 1024} MB。`,
+      );
     if (isPdf && this.files.length !== 1)
       throw new Error("每批只能选择一个 PDF。");
     if (
@@ -113,11 +114,7 @@ export class LocalDocument {
         }
       } else {
         const bitmap = await createImageBitmap(file);
-        try {
-          this.checkPixels(bitmap.width, bitmap.height);
-        } finally {
-          bitmap.close();
-        }
+        bitmap.close();
         this.addPage(this.batch.files.at(-1)!.id, 1, "");
       }
     }
@@ -140,12 +137,6 @@ export class LocalDocument {
       regions: [],
     });
   }
-  private checkPixels(width: number, height: number) {
-    if (width * height > this.limit.pixels)
-      throw new Error(
-        `页面像素超过 ${this.limit.pixels.toLocaleString()}，请缩小图片后重试。`,
-      );
-  }
   async render(index: number): Promise<HTMLCanvasElement> {
     if (this.destroyed) throw new Error("原文件已释放，请重新选择。");
     const item = this.pages[index],
@@ -156,7 +147,6 @@ export class LocalDocument {
         scale: 2,
         rotation: item.source.rotation,
       });
-      this.checkPixels(Math.ceil(viewport.width), Math.ceil(viewport.height));
       canvas.width = Math.ceil(viewport.width);
       canvas.height = Math.ceil(viewport.height);
       await page.render({ canvas, viewport }).promise;
@@ -171,7 +161,6 @@ export class LocalDocument {
         const swap = item.source.rotation % 180 !== 0;
         canvas.width = swap ? bitmap.height : bitmap.width;
         canvas.height = swap ? bitmap.width : bitmap.height;
-        this.checkPixels(canvas.width, canvas.height);
         const ctx = canvas.getContext("2d")!;
         ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.rotate((item.source.rotation * Math.PI) / 180);
