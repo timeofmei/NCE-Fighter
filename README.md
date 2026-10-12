@@ -8,7 +8,7 @@ NCE Fighter 是一个面向多语言课文记忆训练的响应式 Web 项目。
 
 第二阶段比较与逐句训练已完成，用户验收通过；验收步骤与验证结果见[阶段 02](doc/stages/02-sentence-training.md)。PDF、真实 OCR 和 ASR 按后续阶段推进。
 
-第三阶段已实现全文键盘默写、手动保存草稿、统一 JSON 原子恢复，以及固定识别适配器和不同语言规则的核心契约验证。自动验证已通过，用户应用验收待执行；验证结果、JSON 样例和验收步骤见[阶段 03](doc/stages/03-core-completion.md)。
+第三阶段已完成全文键盘默写、手动保存草稿、统一 JSON 原子恢复，以及固定识别适配器和不同语言规则的核心契约验证。自动验证与用户应用验收均通过；验证结果、JSON 样例和验收记录见[阶段 03](doc/stages/03-core-completion.md)。
 
 ## 项目文档
 
@@ -21,7 +21,7 @@ NCE Fighter 是一个面向多语言课文记忆训练的响应式 Web 项目。
 - [工程开发指南](doc/DEVELOPMENT.md)：技术栈、目录、存储与开发验证方案。
 - [阶段 01：文本导入](doc/stages/01-text-import.md)：可运行交付、验收步骤与已完成的验证记录。
 - [阶段 02：比较与逐句训练](doc/stages/02-sentence-training.md)：已审核范围、实现授权、实施安排及用户验收步骤。
-- [阶段 03：全文训练与核心补齐](doc/stages/03-core-completion.md)：已确认范围、实施安排、JSON 契约与验收计划。
+- [阶段 03：全文训练与核心补齐](doc/stages/03-core-completion.md)：已完成范围、JSON 契约、验证结果与用户验收记录。
 - [协作与 Git 规则](AGENTS.md)：文件编辑、提交和合并要求。
 
 ## License
