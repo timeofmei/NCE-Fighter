@@ -13,12 +13,14 @@ export const sameModuleRef = (
   a.moduleVersion === b.moduleVersion &&
   a.profileVersion === b.profileVersion;
 export interface Sentence {
+  sourceRefs?: string[];
   id: string;
   order: number;
   start: number;
   end: number;
 }
 export interface Draft {
+  batchId?: string;
   storageVersion?: number;
   schemaVersion: 1;
   id: string;
@@ -32,6 +34,8 @@ export interface Draft {
   updatedAt: string;
 }
 export interface Lesson {
+  batchId?: string;
+  sourceRefs?: string[];
   storageVersion?: number;
   schemaVersion: 1;
   lessonId: string;
@@ -112,6 +116,9 @@ export function confirm(
     throw new Error(result.issues.map((issue) => issue.message).join("\n"));
   return {
     schemaVersion: 1,
+    ...(draft.batchId
+      ? { batchId: draft.batchId, sourceRefs: [...draft.sourceRefs] }
+      : {}),
     lessonId: draft.id,
     revisionId: host.revisionId,
     languageId: draft.languageId,
@@ -120,6 +127,12 @@ export function confirm(
     body: result.body,
     sentences: result.sentences.map((sentence) => ({
       ...sentence,
+      ...(draft.batchId
+        ? {
+            sourceRefs:
+              draft.sentences[sentence.order]?.sourceRefs ?? draft.sourceRefs,
+          }
+        : {}),
       id: host.sentenceId(sentence.order),
     })),
     confirmedAt: host.now,
@@ -179,6 +192,12 @@ function validateSentences(value: unknown[], expected: Omit<Sentence, "id">[]) {
       sentence.end !== expected[i].end
     )
       throw new Error("句子范围数据损坏。");
+    if (
+      sentence.sourceRefs !== undefined &&
+      (!Array.isArray(sentence.sourceRefs) ||
+        !sentence.sourceRefs.every((ref) => typeof ref === "string" && ref))
+    )
+      throw new Error("句子来源数据损坏。");
     ids.add(sentence.id);
   });
 }

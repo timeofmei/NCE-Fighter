@@ -124,7 +124,7 @@ describe("IndexedDB transaction and recovery", () => {
   it("rejects unknown versions on restore without overwriting data", async () => {
     await store.saveDraft(draft);
     await new Promise<void>((resolve) => {
-      const req = factory.open("test", 2);
+      const req = factory.open("test");
       req.onsuccess = () => {
         const tx = req.result.transaction("drafts", "readwrite");
         tx.objectStore("drafts").put({ ...draft, schemaVersion: 99 });

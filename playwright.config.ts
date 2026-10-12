@@ -10,6 +10,7 @@ export default defineConfig({
         "import.spec.ts",
         "training.spec.ts",
         "whole-training.spec.ts",
+        "document.spec.ts",
       ],
       use: { baseURL: "http://127.0.0.1:4173" },
     },

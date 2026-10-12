@@ -25,14 +25,20 @@ import {
 import { registry } from "../languages/registry";
 import { errorMessage, LoadError } from "../components/feedback";
 import { DeleteDraft } from "../components/delete-draft";
+import { FileImport } from "../components/file-import";
 import type { Route } from "./+types/import";
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
-  const draftId = new URL(request.url).searchParams.get("draft");
+  const params = new URL(request.url).searchParams;
+  const draftId = params.get("draft");
   try {
     const draft = draftId ? await store.draft(draftId) : undefined;
     return {
       draft,
+      fileMode: params.get("mode") === "file",
+      languageId: params.get("language") === "en" ? "en" : "",
+      batch: draft?.batchId ? await store.batch(draft.batchId) : undefined,
+      batchDrafts: draft?.batchId ? await store.batchDrafts(draft.batchId) : [],
       id: draftId ?? crypto.randomUUID(),
       error: undefined,
       missing: !!draftId && !draft,
@@ -40,6 +46,10 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   } catch (error) {
     return {
       draft: undefined,
+      fileMode: false,
+      languageId: "",
+      batch: undefined,
+      batchDrafts: [],
       id: draftId ?? "",
       error: errorMessage(error),
       missing: false,
@@ -57,7 +67,15 @@ export default function Import({ loaderData }: Route.ComponentProps) {
         </Button>
       </Stack>
     );
-  return (
+  return loaderData.fileMode || loaderData.draft?.batchId ? (
+    <FileImport
+      key={loaderData.id}
+      initial={loaderData.draft}
+      initialBatch={loaderData.batch}
+      drafts={loaderData.batchDrafts}
+      languageId={loaderData.languageId}
+    />
+  ) : (
     <Editor key={loaderData.id} id={loaderData.id} initial={loaderData.draft} />
   );
 }
@@ -220,6 +238,25 @@ function Editor({ id, initial }: { id: string; initial?: Draft }) {
         readOnly={busy}
         required
       />
+      {!initial && (
+        <Group>
+          <Button variant="light" disabled>
+            粘贴文本
+          </Button>
+          <Button
+            variant="subtle"
+            disabled={!language || busy}
+            onClick={() => {
+              if (!form.body && !form.title && !initial) bypass.current = true;
+              void navigate(
+                `/import?mode=file&language=${encodeURIComponent(form.languageId)}`,
+              );
+            }}
+          >
+            文件导入
+          </Button>
+        </Group>
+      )}
       <TextInput
         label="标题"
         placeholder="未命名课文"

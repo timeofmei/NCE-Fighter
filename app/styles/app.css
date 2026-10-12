@@ -71,3 +71,34 @@ textarea,
     background-color: var(--mantine-color-red-1);
   }
 }
+.document-editor {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(0, 3fr);
+  gap: 24px;
+}
+.document-list,
+.document-body {
+  min-width: 0;
+}
+.document-mobile-select {
+  display: none;
+}
+.source-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+  border: 1px solid #ced4da;
+}
+@media (max-width: 700px) {
+  .document-editor {
+    display: flex;
+    flex-direction: column;
+  }
+  .document-mobile-select {
+    display: block;
+  }
+  .document-list > .mantine-Group-root {
+    display: none;
+  }
+}

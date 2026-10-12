@@ -136,7 +136,7 @@ it("aborts atomic submit without losing input, retries the same request", async 
 });
 async function corrupt(change: (record: Record<string, unknown>) => void) {
   await new Promise<void>((resolve, reject) => {
-    const req = factory.open("training", 2);
+    const req = factory.open("training");
     req.onerror = () => reject(req.error);
     req.onsuccess = () => {
       const db = req.result,
@@ -158,7 +158,7 @@ it("retains stored results when pinned modules disappear but blocks continuing",
   await store.startSession("lesson", { id: "s", now });
   // Both dependencies use the same unavailable pinned module; history remains interpretable.
   await new Promise<void>((resolve) => {
-    const req = factory.open("training", 2);
+    const req = factory.open("training");
     req.onsuccess = () => {
       const db = req.result,
         tx = db.transaction(["sessions", "lessons"], "readwrite");
@@ -204,7 +204,7 @@ it("rejects corrupt records and missing dependencies without overwriting them", 
 it("rejects a missing lesson while retaining the session", async () => {
   await store.startSession("lesson", { id: "s", now });
   await new Promise<void>((resolve) => {
-    const req = factory.open("training", 2);
+    const req = factory.open("training");
     req.onsuccess = () => {
       const db = req.result,
         tx = db.transaction("lessons", "readwrite");

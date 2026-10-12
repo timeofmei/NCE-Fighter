@@ -1,6 +1,6 @@
 # 工程开发指南
 
-状态：已建立第一阶段工程；实际交付与验收结果见[阶段 01](stages/01-text-import.md)，协作流程见[开发流程](DEVELOPMENT_WORKFLOW.md)。
+状态：已实现文本训练及本地 PDF／印刷 OCR；当前交付与验证结果见[阶段 04](stages/04-document-ocr.md)，协作流程见[开发流程](DEVELOPMENT_WORKFLOW.md)。
 
 ## 技术栈与运行边界
 
@@ -22,7 +22,7 @@ app/
   components/           共用界面组件
   core/                 课文结构、校验与统一业务逻辑
   languages/            注册机制及各语言实现
-  adapters/             浏览器存储及后续识别适配器
+  adapters/             浏览器存储、PDF、OCR Worker 与资源缓存
   styles/               全局与页面样式
 tests/
   unit/                 核心和模块测试
@@ -37,13 +37,13 @@ core 不依赖 React、DOM、IndexedDB 或模型运行时；语言模块不依�
 
 数据契约唯一维护在[核心引擎](CORE_ENGINE.md#26-逐行确认与持久化契约)。工程使用原生 IndexedDB 的集中适配器，不在各页面分散操作数据库。数据库版本与导出 schemaVersion 分开维护。IndexedDB 保存 JavaScript 字符串，不指定文本文件编码；项目源码、文档和后续 JSON 导出使用 UTF-8。
 
-路由：/library 为课文库，/import 为导入与草稿编辑，/lessons/:lessonId 为只读详情，/training/:sessionId 共用逐句与全文键盘训练页面，/results/:sessionId 为保存的训练结果；根路径进入课文库。课文和会话 ID 由浏览器生成，详情与训练通过客户端读取。缺失 ID 提示不存在，存储读取失败提示重试；两者不得混同。
+路由：/library 为课文库，/import 为导入与草稿编辑，/resources 为本地 OCR 资源与设备检测，/lessons/:lessonId 为只读详情，/training/:sessionId 共用逐句与全文键盘训练页面，/results/:sessionId 为保存的训练结果；根路径进入课文库。课文和会话 ID 由浏览器生成，详情与训练通过客户端读取。缺失 ID 提示不存在，存储读取失败提示重试；两者不得混同。
 
 统一 JSON 结构及依赖校验位于 app/core/user-data.ts；IndexedDbStore.exportData、checkImport、importData 使用同一组对象仓库的事务。会话 generation 与 version、课文对象 storageVersion 是写入并发控制字段，恢复时递增以使旧页面的写入失效，业务内容与历史结果按文件恢复。页面更新会话时传入当前 generation 与 version；校对页保存或确认时保留加载时的 storageVersion。识别接口位于 app/core/recognition.ts，固定 OCR／ASR 适配器只存在于测试中，不注册为应用输入能力。
 
 本地数据限定于当前浏览器及站点来源，不承诺跨设备恢复。静态部署须让页面 URL 回退到 index.html，同时保留真实资源请求的正常失败状态；相关配置和断网能力在发布阶段独立验收。
 
-当前开发阶段不要求兼容此前版本保存的课文、草稿或训练数据，也不实现旧数据迁移；数据结构或模块契约变更时允许清空并重建开发数据。当前版本内的刷新恢复、课文只读、会话版本绑定与历史结果保护仍按核心契约验证。实际清理须明确目标站点及数据范围，不在读取失败时自动删除数据。
+IndexedDB 当前版本为 3，升级时保留此前课文、草稿与训练数据，并创建 batches、mutations 仓库。数据库版本独立于 JSON 版本 1／2；旧导出可恢复。刷新恢复、课文只读、会话版本绑定与历史结果保护按核心契约验证，不在读取失败时自动删除数据。
 
 编辑与训练状态以局部状态和必要的共享上下文管理；出现实际复杂度后再评估全局状态库。
 
@@ -63,16 +63,21 @@ core 不依赖 React、DOM、IndexedDB 或模型运行时；语言模块不依�
 
 在仓库根目录执行下列实际命令。首次安装运行 npm ci；首次运行端到端测试另执行 npx playwright install chromium。访问地址以启动命令输出为准；生产预览须先完成构建。恢复测试使用同一浏览器和站点来源。
 
-| 命令 | 用途 |
-| --- | --- |
-| npm ci | 按工作区锁文件安装依赖 |
-| npm run dev | 启动开发应用 |
-| npm run typecheck | 生成路由类型并执行 TypeScript 检查 |
-| npm run lint | 检查代码规范和依赖边界 |
-| npm run test | 执行 Vitest 单元及集成测试 |
-| npm run test:e2e | 执行 Playwright 关键流程测试 |
-| npm run build | 验证静态生产构建 |
-| npm run preview | 在本地预览 build/client 的生产产物 |
+| 命令                                                            | 用途                                                                  |
+| --------------------------------------------------------------- | --------------------------------------------------------------------- |
+| npm ci                                                          | 按工作区锁文件安装依赖                                                |
+| npm run dev                                                     | 启动开发应用                                                          |
+| npm run typecheck                                               | 生成路由类型并执行 TypeScript 检查                                    |
+| npm run lint                                                    | 检查代码规范和依赖边界                                                |
+| npm run test                                                    | 执行 Vitest 单元及集成测试                                            |
+| npm run test:e2e                                                | 执行 Playwright 关键流程测试                                          |
+| npm run build                                                   | 验证静态生产构建                                                      |
+| npm run preview                                                 | 在本地预览 build/client 的生产产物                                    |
+| npm run prepare:resources                                       | 生成本站 PDF／WASM 资源及 OCR 大小与 SHA-256 清单；dev/build 自动执行 |
+| node scripts/generate-document-fixtures.mjs                     | 重建公开材料派生的 PDF／图片测试样本                                  |
+| node scripts/measure-document-runtime.mjs http://localhost:5173 | 对已启动的开发服务测量真实 OCR、PDF 和浏览器进程树内存                |
+
+模型原文件、词表、许可证与来源说明位于 [public/models](../public/models/ppocr-tiny/NOTICE.md)。构建资源由锁定依赖生成到 public/resources，目录不入 Git；正式 OCR 下载校验清单为 [ocr-manifest.json](../app/adapters/ocr-manifest.json)。PDF.js Worker 随构建输出，CMap、字体、WASM 和 ICC 从本站资源目录按需加载。开发服务预优化文件页面依赖，避免首次打开文件输入时因依赖优化重载丢失选择。
 
 核心测试重点为范围、输入校验、确定性及语言契约；存储测试验证事务失败和恢复；端到端测试验证用户流程及刷新。实际命令和结果记录在阶段文档，不将计划测试记为通过。用户体验验收步骤也只维护在阶段文档。
 

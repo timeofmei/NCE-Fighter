@@ -6,11 +6,13 @@ import {
   type Registry,
 } from "./lesson";
 import { summarize, validateSession, type Session } from "./training";
+import { validateDocumentLinks, type FileBatch } from "./document";
 
 export interface UserData {
   app: "nce-fighter";
   system: { name: string | null; version: string | null };
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
+  batches?: FileBatch[];
   drafts: Draft[];
   lessons: Lesson[];
   sessions: Session[];
@@ -39,7 +41,7 @@ export function validateUserData(
   if (!value || typeof value !== "object")
     throw new Error("用户数据 JSON 格式无效。");
   const data = value as UserData;
-  if (data.app !== "nce-fighter" || data.schemaVersion !== 1)
+  if (data.app !== "nce-fighter" || ![1, 2].includes(data.schemaVersion))
     throw new Error("用户数据版本或应用标识不受支持。");
   if (
     !data.system ||
@@ -49,6 +51,14 @@ export function validateUserData(
     ![data.drafts, data.lessons, data.sessions].every(Array.isArray)
   )
     throw new Error("用户数据字段损坏。");
+  if (data.schemaVersion === 2 && !Array.isArray(data.batches))
+    throw new Error("文件批次缺失。");
+  if (
+    data.schemaVersion === 1 &&
+    (data.batches !== undefined ||
+      [...data.drafts, ...data.lessons].some((r) => r.batchId !== undefined))
+  )
+    throw new Error("文件来源需要 JSON 版本 2。");
   const lessonIds = new Set<string>(),
     sessionIds = new Set<string>();
   for (const d of data.drafts) {
@@ -75,6 +85,17 @@ export function validateUserData(
       throw new Error("同一课文不能同时为草稿和已确认状态。");
   }
   for (const l of lessons.values()) validateLesson(l, historicalRegistry);
+  const batches = new Map((dependencies?.batches ?? []).map((b) => [b.id, b]));
+  const batchIds = new Set<string>();
+  for (const b of data.batches ?? []) {
+    if (!b || batchIds.has(b.id)) throw new Error("文件批次标识重复。");
+    batchIds.add(b.id);
+    batches.set(b.id, b);
+  }
+  validateDocumentLinks(
+    [...batches.values()],
+    [...drafts.values(), ...lessons.values()],
+  );
   const sessions = new Map(
     (dependencies?.sessions ?? []).map((s) => [s.id, s]),
   );

@@ -6,9 +6,12 @@ import {
   type Unit,
 } from "../core/comparison";
 import { caseFold } from "./case-fold";
+import type { DocumentLanguage } from "../core/document";
+import { proposeEnglishDocument } from "./english-document";
 const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
 
-export const english: ImportLanguage & TrainingLanguage = {
+export const english: ImportLanguage & TrainingLanguage & DocumentLanguage = {
+  proposeDocument: proposeEnglishDocument,
   languageId: "en",
   label: "英语",
   textDirection: "ltr",

@@ -13,6 +13,11 @@ import {
 import { registry } from "../languages/registry";
 import { trainingModule } from "../languages/registry";
 import {
+  validateBatch,
+  validateDocumentLinks,
+  type FileBatch,
+} from "../core/document";
+import {
   beginSession,
   reduceSession,
   summarize,
@@ -22,6 +27,7 @@ import {
 } from "../core/training";
 
 export const DATABASE_NAME = "nce-fighter";
+export const DATABASE_VERSION = 3;
 const advanceVersion = (...versions: number[]) => {
   const next = Math.max(...versions) + 1;
   if (!Number.isSafeInteger(next))
@@ -40,13 +46,15 @@ export class IndexedDbStore implements LessonStore {
   ) {}
   private open(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      const req = this.factory().open(this.name, 2);
+      const req = this.factory().open(this.name, DATABASE_VERSION);
       let blocked = false;
       req.onupgradeneeded = () => {
         for (const [name, keyPath] of [
           ["drafts", "id"],
           ["lessons", "lessonId"],
           ["sessions", "id"],
+          ["batches", "id"],
+          ["mutations", "id"],
         ]) {
           if (!req.result.objectStoreNames.contains(name))
             req.result.createObjectStore(name, { keyPath });
@@ -153,42 +161,82 @@ export class IndexedDbStore implements LessonStore {
   }
   async saveDraft(draft: Draft) {
     validateDraft(draft, historicalRegistry);
-    return this.transaction(["drafts", "lessons"], "readwrite", async (tx) => {
-      if (await request(tx.objectStore("lessons").get(draft.id)))
-        throw new Error("课文已确认，请新建导入。");
-      const previous: Draft | undefined = await request(
-        tx.objectStore("drafts").get(draft.id),
-      );
-      if ((previous?.storageVersion ?? 0) !== (draft.storageVersion ?? 0))
-        throw new Error("草稿已在其他窗口更新，请刷新后继续。");
-      await request(tx.objectStore("drafts").put(draft));
-    });
+    return this.transaction(
+      ["drafts", "lessons", "mutations"],
+      "readwrite",
+      async (tx) => {
+        if (
+          await request(tx.objectStore("mutations").get(`retired:${draft.id}`))
+        )
+          throw new Error("草稿已被拆合或删除，请刷新。");
+        if (draft.batchId) throw new Error("文件草稿须连同批次保存。");
+        if (await request(tx.objectStore("lessons").get(draft.id)))
+          throw new Error("课文已确认，请新建导入。");
+        const previous: Draft | undefined = await request(
+          tx.objectStore("drafts").get(draft.id),
+        );
+        if ((previous?.storageVersion ?? 0) !== (draft.storageVersion ?? 0))
+          throw new Error("草稿已在其他窗口更新，请刷新后继续。");
+        await request(tx.objectStore("drafts").put(draft));
+      },
+    );
   }
   async deleteDraft(id: string) {
-    return this.transaction(["drafts"], "readwrite", async (tx) => {
-      await request(tx.objectStore("drafts").delete(id));
-    });
+    return this.transaction(
+      ["drafts", "lessons", "batches", "mutations"],
+      "readwrite",
+      async (tx) => {
+        const draft: Draft | undefined = await request(
+          tx.objectStore("drafts").get(id),
+        );
+        if (draft)
+          await request(
+            tx
+              .objectStore("mutations")
+              .put({
+                id: `retired:${id}`,
+                version: advanceVersion(draft.storageVersion ?? 0),
+              }),
+          );
+        await request(tx.objectStore("drafts").delete(id));
+        await this.cleanBatches(tx);
+      },
+    );
   }
   async confirm(draftId: string, lesson: Lesson, expectedStorageVersion = 0) {
     validateLesson(lesson, registry);
     if (draftId !== lesson.lessonId)
       throw new Error("保存信息有误，请重新打开草稿。");
-    return this.transaction(["drafts", "lessons"], "readwrite", async (tx) => {
-      const draft: Draft | undefined = await request(
-        tx.objectStore("drafts").get(draftId),
-      );
-      if ((draft?.storageVersion ?? 0) !== expectedStorageVersion)
-        throw new Error("草稿已在其他窗口更新，请刷新后继续。");
-      const existing: unknown = await request(
-        tx.objectStore("lessons").get(lesson.lessonId),
-      );
-      if (existing !== undefined) {
-        validateLesson(existing, registry);
-        if (JSON.stringify(existing) !== JSON.stringify(lesson))
-          throw new Error("课文已确认，请新建导入。");
-      } else await request(tx.objectStore("lessons").add(lesson));
-      await request(tx.objectStore("drafts").delete(draftId));
-    });
+    return this.transaction(
+      ["drafts", "lessons", "batches", "mutations"],
+      "readwrite",
+      async (tx) => {
+        if (
+          await request(tx.objectStore("mutations").get(`retired:${draftId}`))
+        )
+          throw new Error("草稿已被拆合或删除，请刷新。");
+        const draft: Draft | undefined = await request(
+          tx.objectStore("drafts").get(draftId),
+        );
+        if ((draft?.storageVersion ?? 0) !== expectedStorageVersion)
+          throw new Error("草稿已在其他窗口更新，请刷新后继续。");
+        const existing: unknown = await request(
+          tx.objectStore("lessons").get(lesson.lessonId),
+        );
+        if (lesson.batchId) {
+          const batch = await request(
+            tx.objectStore("batches").get(lesson.batchId),
+          );
+          validateDocumentLinks(batch ? [batch] : [], [lesson]);
+        }
+        if (existing !== undefined) {
+          validateLesson(existing, registry);
+          if (JSON.stringify(existing) !== JSON.stringify(lesson))
+            throw new Error("课文已确认，请新建导入。");
+        } else await request(tx.objectStore("lessons").add(lesson));
+        await request(tx.objectStore("drafts").delete(draftId));
+      },
+    );
   }
   async sessions(lessonId?: string): Promise<Session[]> {
     return this.transaction(["sessions", "lessons"], "readonly", async (tx) => {
@@ -333,9 +381,11 @@ export class IndexedDbStore implements LessonStore {
       request(tx.objectStore("drafts").getAll()),
       request(tx.objectStore("lessons").getAll()),
       request(tx.objectStore("sessions").getAll()),
-    ]).then(([drafts, lessons, sessions]) => ({
+      request(tx.objectStore("batches").getAll()),
+    ]).then(([drafts, lessons, sessions, batches]) => ({
       app: "nce-fighter",
-      schemaVersion: 1,
+      schemaVersion: batches.length ? 2 : 1,
+      ...(batches.length ? { batches } : {}),
       system,
       drafts,
       lessons,
@@ -346,14 +396,14 @@ export class IndexedDbStore implements LessonStore {
     system: UserData["system"] = { name: null, version: null },
   ): Promise<UserData> {
     return this.transaction(
-      ["drafts", "lessons", "sessions"],
+      ["drafts", "lessons", "sessions", "batches"],
       "readonly",
       async (tx) => validateUserData(await this.snapshot(tx, system)),
     );
   }
   async checkImport(value: unknown): Promise<UserData> {
     return this.transaction(
-      ["drafts", "lessons", "sessions"],
+      ["drafts", "lessons", "sessions", "batches"],
       "readonly",
       async (tx) =>
         validateUserData(
@@ -365,11 +415,13 @@ export class IndexedDbStore implements LessonStore {
   async importData(value: unknown): Promise<void> {
     const incoming: unknown = structuredClone(value);
     return this.transaction(
-      ["drafts", "lessons", "sessions"],
+      ["drafts", "lessons", "sessions", "batches", "mutations"],
       "readwrite",
       async (tx) => {
         const current = await this.snapshot(tx, { name: null, version: null });
         const data = validateUserData(incoming, current);
+        for (const batch of data.batches ?? [])
+          await request(tx.objectStore("batches").put(batch));
         const lessonVersions = new Map([
           ...current.drafts.map((d) => [d.id, d.storageVersion ?? 0] as const),
           ...current.lessons.map(
@@ -380,6 +432,12 @@ export class IndexedDbStore implements LessonStore {
           current.sessions.map((s) => [s.id, s]),
         );
         for (const draft of data.drafts) {
+          const retired = await request(
+            tx.objectStore("mutations").get(`retired:${draft.id}`),
+          );
+          await request(
+            tx.objectStore("mutations").delete(`retired:${draft.id}`),
+          );
           await request(tx.objectStore("lessons").delete(draft.id));
           await request(
             tx.objectStore("drafts").put({
@@ -387,11 +445,15 @@ export class IndexedDbStore implements LessonStore {
               storageVersion: advanceVersion(
                 lessonVersions.get(draft.id) ?? 0,
                 draft.storageVersion ?? 0,
+                retired?.version ?? 0,
               ),
             }),
           );
         }
         for (const lesson of data.lessons) {
+          await request(
+            tx.objectStore("mutations").delete(`retired:${lesson.lessonId}`),
+          );
           await request(tx.objectStore("drafts").delete(lesson.lessonId));
           await request(
             tx.objectStore("lessons").put({
@@ -432,6 +494,134 @@ export class IndexedDbStore implements LessonStore {
               }),
             );
         }
+        await this.cleanBatches(tx);
+      },
+    );
+  }
+  async batch(id: string): Promise<FileBatch | undefined> {
+    return this.transaction(["batches"], "readonly", async (tx) => {
+      const value = await request(tx.objectStore("batches").get(id));
+      return value === undefined ? undefined : validateBatch(value);
+    });
+  }
+  async batchDrafts(id: string): Promise<Draft[]> {
+    const { drafts } = await this.list();
+    return drafts.filter((d) => d.batchId === id);
+  }
+  private async cleanBatches(tx: IDBTransaction) {
+    const [drafts, lessons, batches] = await Promise.all([
+      request(tx.objectStore("drafts").getAll()),
+      request(tx.objectStore("lessons").getAll()),
+      request(tx.objectStore("batches").getAll()),
+    ]);
+    const used = new Set([...drafts, ...lessons].map((r) => r.batchId));
+    for (const b of batches)
+      if (!used.has(b.id))
+        await request(tx.objectStore("batches").delete(b.id));
+  }
+  async saveDocumentDraft(draft: Draft, batch: FileBatch): Promise<Draft> {
+    return (
+      await this.replaceDocumentDrafts(
+        [draft],
+        [draft],
+        batch,
+        `${draft.id}:save:${draft.storageVersion ?? 0}:${draft.updatedAt}`,
+      )
+    )[0];
+  }
+  // A single transaction updates every participant, records retirement and the operation
+  // result, and preserves the original drafts if any request or validation fails.
+  async replaceDocumentDrafts(
+    before: Draft[],
+    after: Draft[],
+    batch: FileBatch,
+    operationId: string,
+  ): Promise<Draft[]> {
+    validateBatch(batch);
+    after.forEach((d) => validateDraft(d, historicalRegistry));
+    validateDocumentLinks([batch], after);
+    if (
+      !before.length ||
+      !after.length ||
+      !operationId ||
+      new Set(before.map((d) => d.id)).size !== before.length ||
+      new Set(after.map((d) => d.id)).size !== after.length ||
+      before.some(
+        (d) => d.batchId !== batch.id || d.languageId !== batch.languageId,
+      )
+    )
+      throw new Error("草稿操作关联无效。");
+    return this.transaction(
+      ["drafts", "lessons", "batches", "mutations"],
+      "readwrite",
+      async (tx) => {
+        const drafts = tx.objectStore("drafts"),
+          mutations = tx.objectStore("mutations");
+        const replay = await request(mutations.get(`operation:${operationId}`));
+        if (replay) {
+          for (const result of replay.drafts as Draft[]) {
+            const latest: Draft | undefined = await request(
+              drafts.get(result.id),
+            );
+            if (!latest || latest.storageVersion !== result.storageVersion)
+              throw new Error("草稿操作已失效，请刷新。");
+          }
+          return replay.drafts as Draft[];
+        }
+        const versions = new Map<string, number>();
+        for (const d of before) {
+          const saved: Draft | undefined = await request(drafts.get(d.id));
+          if (
+            (await request(mutations.get(`retired:${d.id}`))) ||
+            (await request(tx.objectStore("lessons").get(d.id))) ||
+            (saved?.storageVersion ?? 0) !== (d.storageVersion ?? 0)
+          )
+            throw new Error("草稿已在其他窗口更新、确认或合并，请刷新。");
+          if (
+            saved &&
+            (saved.batchId !== batch.id ||
+              saved.languageId !== batch.languageId)
+          )
+            throw new Error("草稿批次不一致。");
+          versions.set(d.id, saved?.storageVersion ?? 0);
+        }
+        const existingBatch = await request(
+          tx.objectStore("batches").get(batch.id),
+        );
+        if (
+          existingBatch &&
+          JSON.stringify(existingBatch) !== JSON.stringify(batch)
+        )
+          throw new Error("来源批次已更新，请刷新。");
+        const results = after.map((d) => ({
+          ...d,
+          storageVersion: advanceVersion(versions.get(d.id) ?? 0),
+        }));
+        for (const d of results) {
+          if (
+            !versions.has(d.id) &&
+            ((await request(drafts.get(d.id))) ||
+              (await request(tx.objectStore("lessons").get(d.id))) ||
+              (await request(mutations.get(`retired:${d.id}`))))
+          )
+            throw new Error("新增草稿标识冲突。");
+          await request(drafts.put(d));
+        }
+        for (const d of before)
+          if (!after.some((a) => a.id === d.id)) {
+            await request(drafts.delete(d.id));
+            await request(
+              mutations.put({
+                id: `retired:${d.id}`,
+                version: advanceVersion(d.storageVersion ?? 0),
+              }),
+            );
+          }
+        await request(tx.objectStore("batches").put(batch));
+        await request(
+          mutations.put({ id: `operation:${operationId}`, drafts: results }),
+        );
+        return results;
       },
     );
   }

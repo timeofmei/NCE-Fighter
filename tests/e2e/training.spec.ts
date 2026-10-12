@@ -315,7 +315,7 @@ test("unavailable pinned module permits history reading and prevents recompariso
   await expect(page).toHaveURL(/\/results\//);
   await page.evaluate(async () => {
     await new Promise<void>((resolve, reject) => {
-      const req = indexedDB.open("nce-fighter", 2);
+      const req = indexedDB.open("nce-fighter");
       req.onerror = () => reject(req.error);
       req.onsuccess = () => {
         const db = req.result,

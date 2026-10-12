@@ -1,0 +1,27 @@
+[
+  {
+    "path": "/resources/ort.wasm.min.mjs",
+    "bytes": 50126,
+    "sha256": "219e6a1fc8a9938268d18efca3c91d310bd2f4a59bbd13744df5b2b7fc6cee3b"
+  },
+  {
+    "path": "/resources/ort-wasm-simd-threaded.mjs",
+    "bytes": 24381,
+    "sha256": "e13f7f94fc51b4ca72b12faeb1ee95f4ace6dfbc8939bc718aabdc0a27c4299b"
+  },
+  {
+    "path": "/resources/ort-wasm-simd-threaded.wasm",
+    "bytes": 14239897,
+    "sha256": "3398c10d07d229bd91b364548e130e0e51a8e5704b88c7c083ebbeb78842dee2"
+  },
+  {
+    "path": "/models/ppocr-tiny/inference.onnx",
+    "bytes": 4462639,
+    "sha256": "9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6"
+  },
+  {
+    "path": "/models/ppocr-tiny/dictionary.json",
+    "bytes": 40974,
+    "sha256": "fb8ae793546672bc8abd04b11d19e1c381b1ca2be4fe6ef070d7ace97b19ca7d"
+  }
+]

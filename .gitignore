@@ -4,3 +4,5 @@ build/
 playwright-report/
 test-results/
 *.tsbuildinfo
+.local-models/
+public/resources/

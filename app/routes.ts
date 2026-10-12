@@ -4,6 +4,7 @@ export default [
   index("routes/home.tsx"),
   route("library", "routes/library.tsx"),
   route("import", "routes/import.tsx"),
+  route("resources", "routes/resources.tsx"),
   route("lessons/:lessonId", "routes/lesson.tsx"),
   route("training/:sessionId", "routes/training.tsx"),
   route("results/:sessionId", "routes/result.tsx"),

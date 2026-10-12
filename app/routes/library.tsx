@@ -80,6 +80,9 @@ export default function Library({ loaderData }: Route.ComponentProps) {
         <Title order={1}>课文库</Title>
         <Group gap="xs">
           <UserDataDialog onImported={() => revalidator.revalidate()} />
+          <Button component={Link} to="/resources" variant="subtle">
+            本地资源
+          </Button>
           <Button variant="subtle" onClick={() => setHelpOpened(true)}>
             帮助
           </Button>

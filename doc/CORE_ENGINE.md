@@ -14,12 +14,12 @@
 
 语言模块返回有序 ComparisonUnit 列表。每个单位包含用于比较的 key、可显示的原文、原始文本范围和句子归属。单位可以是词、字素簇或模块定义的其他粒度；单位类型和 UI 名称由模块声明。中文和日文等不以空格分词的文本不套用英文词单位，也不能直接按字符串代码单元切割。单位类型是开发者的实现选择，不自动替用户选择语言。
 
-| 语言模块示例 | 可选比较单位 | 需单独开发的规则 |
-| --- | --- | --- |
-| 英语 | 词 | 缩写、撇号、连字符、大小写、首字母提示 |
-| 中文 | 字素簇或分词后的词 | 中文句尾符号、引号、空白、简繁策略、提示 |
-| 日语 | 字素簇或语言分词单位 | 句尾与引用边界、假名和汉字、长音与促音、提示 |
-| 其他语言 | 模块自行声明 | 对应语言的大小写、文字规范化、分句与提示 |
+| 语言模块示例 | 可选比较单位         | 需单独开发的规则                             |
+| ------------ | -------------------- | -------------------------------------------- |
+| 英语         | 词                   | 缩写、撇号、连字符、大小写、首字母提示       |
+| 中文         | 字素簇或分词后的词   | 中文句尾符号、引号、空白、简繁策略、提示     |
+| 日语         | 字素簇或语言分词单位 | 句尾与引用边界、假名和汉字、长音与促音、提示 |
+| 其他语言     | 模块自行声明         | 对应语言的大小写、文字规范化、分句与提示     |
 
 此表是模块设计示例，不代表中文、日语或其他语言已实现；不预先强制指定它们的比较粒度。
 
@@ -29,15 +29,15 @@
 
 英语模块采用：Unicode NFKC 规范化 → 大小写折叠 → 分词及标点处理 → 删除空单位。多余空格和换行不产生错误。词内英文直撇号与弯撇号删除；其他标点作为边界，标点本身不计为错误。连字符作为边界，小数点首版按边界处理，不做数字语义解析。
 
-| 标准原文 | 用户输入 | 英语模块预期 |
-| --- | --- | --- |
-| I had a very good seat. | i HAD a very good seat!!! | 完全正确 |
-| Hello,world! | hello world | 完全正确 |
-| Don't stop. | dont stop | 完全正确 |
-| Don't stop. | do not stop | 不做缩写展开，存在差异 |
-| well-known | well known | 完全正确 |
-| theatre | theater | 替换，不自动忽略英美拼写 |
-| I had a good seat. | I have a good seat. | 替换，不接受近义或语义等价 |
+| 标准原文                | 用户输入                  | 英语模块预期               |
+| ----------------------- | ------------------------- | -------------------------- |
+| I had a very good seat. | i HAD a very good seat!!! | 完全正确                   |
+| Hello,world!            | hello world               | 完全正确                   |
+| Don't stop.             | dont stop                 | 完全正确                   |
+| Don't stop.             | do not stop               | 不做缩写展开，存在差异     |
+| well-known              | well known                | 完全正确                   |
+| theatre                 | theater                   | 替换，不自动忽略英美拼写   |
+| I had a good seat.      | I have a good seat.       | 替换，不接受近义或语义等价 |
 
 这些是英语模块规则，不能当作全体语言的基础规则。其他模块有自己的规范化用例；通用契约只要求标点与大小写差异本身不被计错、原文映射有效，以及结果可复现。
 
@@ -63,11 +63,11 @@ N 为参考比较单位数，S 为替换单位数，D 为遗漏单位数，I 为
 
 ### 2.1 三层职责
 
-| 层次 | 负责内容 | 不负责内容 |
-| --- | --- | --- |
-| 统一业务引擎 | 来源顺序、草稿确认、课文版本、训练状态、提示使用记录、统一结果、保存与导出契约 | 某语言的分词、分句、文字等价规则 |
-| 语言文本模块 | 标题与课号识别、分句、归一化、比较单位、提示、必要时自定义对齐 | 录音、网络、设备权限、训练流程、存储 UI |
-| 浏览器与识别适配层 | 本地文件解码、OCR、ASR、录音、权限、持久化、方向和输入法适配 | 决定用户内容语言或复制训练业务 |
+| 层次               | 负责内容                                                                       | 不负责内容                              |
+| ------------------ | ------------------------------------------------------------------------------ | --------------------------------------- |
+| 统一业务引擎       | 来源顺序、草稿确认、课文版本、训练状态、提示使用记录、统一结果、保存与导出契约 | 某语言的分词、分句、文字等价规则        |
+| 语言文本模块       | 标题与课号识别、分句、归一化、比较单位、提示、必要时自定义对齐                 | 录音、网络、设备权限、训练流程、存储 UI |
+| 浏览器与识别适配层 | 本地文件解码、OCR、ASR、录音、权限、持久化、方向和输入法适配                   | 决定用户内容语言或复制训练业务          |
 
 共享工具包含范围校验、序列对齐、错误计数、结果聚合、版本与任务管理。可共享的规则实现可放在公共工具中，由模块显式选用，不让一份默认英语规则自动影响所有语言。各语言模块由开发者分别实现、注册和维护；新增语言通常只增加模块、语言名称及契约测试数据，不新增一套训练页面。
 
@@ -83,23 +83,23 @@ N 为参考比较单位数，S 为替换单位数，D 为遗漏单位数，I 为
 
 ### 2.3 主要数据对象
 
-| 对象 | 必要字段 |
-| --- | --- |
-| ImportBatch | id、languageId、sources、status |
-| Source | id、batchId、languageId、kind、name、order、locator、extractionStatus |
-| LessonDraft | id、languageId、moduleRef、title、body、sourceRefs、boundaryWarnings、sentences |
-| LessonRevision | lessonId、revisionId、languageId、moduleRef、title、body、sentences、confirmedAt |
-| Sentence | id、order、start、end，正文范围为半开区间 [start,end) |
-| ComparisonUnit | key、displayText、sourceRange、sentenceId |
-| Session | id、lessonRevisionId、languageId、moduleRef、comparisonProfileId、mode、status、时间与进度 |
-| Attempt | id、requestId、sentenceId 可空、rawText、confirmedText、hintUsed、answerSeenBeforeAttempt、status、inputKind |
-| Recognition | languageId、sourceRef、rawTranscript、editedTranscript、wasEdited、warnings、providerMetadata 可空 |
-| DiffResult | languageId、moduleRef、comparisonProfileId、unitKind、unitLabel、operations、N/S/D/I、accuracy、sentenceResults |
-| ModuleRef | moduleId、moduleVersion、profileVersion，含规范化、分句、提示和比较规则版本 |
+| 对象             | 必要字段                                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| ImportBatch      | id、languageId、sources、status                                                                                                             |
+| Source           | id、batchId、languageId、kind、name、order、locator、extractionStatus                                                                       |
+| LessonDraft      | id、languageId、moduleRef、title、body、sourceRefs、boundaryWarnings、sentences                                                             |
+| LessonRevision   | lessonId、revisionId、languageId、moduleRef、title、body、sentences、confirmedAt                                                            |
+| Sentence         | id、order、start、end，正文范围为半开区间 [start,end)                                                                                       |
+| ComparisonUnit   | key、displayText、sourceRange、sentenceId                                                                                                   |
+| Session          | id、lessonRevisionId、languageId、moduleRef、comparisonProfileId、mode、status、时间与进度                                                  |
+| Attempt          | id、requestId、sentenceId 可空、rawText、confirmedText、hintUsed、answerSeenBeforeAttempt、status、inputKind                                |
+| Recognition      | languageId、sourceRef、rawTranscript、editedTranscript、wasEdited、warnings、providerMetadata 可空                                          |
+| DiffResult       | languageId、moduleRef、comparisonProfileId、unitKind、unitLabel、operations、N/S/D/I、accuracy、sentenceResults                             |
+| ModuleRef        | moduleId、moduleVersion、profileVersion，含规范化、分句、提示和比较规则版本                                                                 |
 | WebModelManifest | resourceId、taskKind、supportedLanguages、支持印刷或手写的标记、modelVersion、runtimeVersion、dtype、backend、files、总字节数、缓存校验标识 |
-| DeviceCapability | languageId、taskKind、status、reason、modelRef、backend、基准测试结果与日期 |
-| OcrRegion | sourceRef、pageIndex、区域或行坐标、原图尺寸、order、rotation、preparedBy |
-| AudioJob | recordingRef、languageId、duration、内部批次范围、窗口参数、modelRef、status |
+| DeviceCapability | languageId、taskKind、status、reason、modelRef、backend、基准测试结果与日期                                                                 |
+| OcrRegion        | sourceRef、pageIndex、区域或行坐标、原图尺寸、order、rotation、preparedBy                                                                   |
+| AudioJob         | recordingRef、languageId、duration、内部批次范围、窗口参数、modelRef、status                                                                |
 
 文本范围统一使用 Unicode 码点索引，平台 UTF-16 索引在适配层转换。位置索引与比较单位是不同概念：字素簇可跨多个码点，不能将码点索引直接当成字符比较粒度。历史保存原文、所用语言和所有规则版本，使记录可解释。schemaVersion 用于导出与迁移，未知版本明确拒绝或交由迁移器处理。
 
@@ -188,7 +188,7 @@ StructuredHint 包含 label、kind、textDirection 和有序提示片段，不�
 
 已确定应用标识字段为 app，值为 nce-fighter；另设 system 对象，以 name、version 记录导出时用户的操作系统名称与版本。system 始终保留，name、version 分别为字符串或 null；无法获取的字段填 JSON 的 null，不猜测、不使用字符串 "null"。两个字段均无法获取时均填 null，不影响导出或导入。system 属于文件来源信息，不用于决定课文语言、比较规则或覆盖优先级；导入不因来源系统与当前系统不同而拒绝。系统信息由浏览器适配层提供。
 
-其余外层字段为 schemaVersion、drafts、lessons、sessions，文件使用 UTF-8 JSON。drafts 保存课文草稿，lessons 保存已确认课文，sessions 保存训练会话及其已保存输入、作答、识别文本和 DiffResult。同一文件包含全部已保存用户内容，可包含多种语言；各对象保留自身 languageId。关联课文版本和来源训练必须在文件内或目标库中存在。
+其余外层字段为 schemaVersion、drafts、lessons、sessions，文件使用 UTF-8 JSON。无文件批次的数据使用 schemaVersion 1；含文件来源的数据使用 schemaVersion 2，并包含 batches。两个版本均可恢复，版本 1 不接受文件批次字段。drafts 保存课文草稿，lessons 保存已确认课文，sessions 保存训练会话及其已保存输入、作答、识别文本和 DiffResult。batches 保存来源定位和批次归属，不包含原始文件。同一文件包含全部已保存用户内容，可包含多种语言；各对象保留自身 languageId。关联课文版本、来源训练和文件批次必须在文件内或目标库中存在。
 
 JSON 使用恢复事务，保持原标识和草稿／已确认状态，不重新校对、分句、归一化或计算历史结果。草稿按草稿结构校验，不要求通过课文确认门槛；已确认课文保持只读。结构校验不要求安装历史模块，模块不可用时可读取已有结果，但继续训练仍按第 2.2 节阻止。按各对象实际状态核验模块引用、码点范围、单位计数、句子归属和依赖关系；不因文件携带结果就信任其结构。文件内重复 ID、未知 schemaVersion、无效状态、缺失语言、关联对象语言不一致和引用损坏均明确拒绝。
 
@@ -200,7 +200,7 @@ JSON 使用恢复事务，保持原标识和草稿／已确认状态，不重新
 
 ### 2.9 文件批次与草稿拆合契约
 
-本节细化第 2.3／2.4 节的已审核文件输入契约，尚未实施；粘贴文本和第 2.8 节的现行 JSON 行为保持其已确认范围。内部标识、队列与格式迁移由开发者按以下约束设计，不作为额外产品选项。
+本节定义第 2.3／2.4 节的文件输入契约。核心结构见 [document.ts](../app/core/document.ts)，浏览器事务见 [storage.ts](../app/adapters/storage.ts)；粘贴文本仍一次一篇。
 
 - 文件批次绑定用户选择的 languageId，每批为一个 PDF 或有序图片集合。来源文件、页面、区域和文本块保留稳定标识及顺序；图片跨文件组成连续材料，PDF 按页序汇总。失败部分全部成功或明确跳过后，语言模块基于整批可用内容提出标题、课号与句子边界，统一引擎生成多篇草稿；不能把页数或图片数直接当作课文数。
 - 批次、来源和草稿的宿主标识、时间、任务代次由适配层注入。取消、改选语言、重新识别或调整来源区域后，旧任务不得写回新状态。成功识别内容与失败部分分别记录，重试只处理失败部分，不重复已有结果；完成前不提前生成可校对草稿。
@@ -208,4 +208,5 @@ JSON 使用恢复事务，保持原标识和草稿／已确认状态，不重新
 - 拆合仅用于草稿；合并要求同一批次、同语言，正文顺序由用户确认，不开放跨批次合并。拆分保留原草稿标识用于前半篇，后半篇生成新标识；合并保留第一篇标识，移除其他参与草稿。同步重建正文范围、来源关联和写入版本，已确认课文及训练记录不参与拆合。
 - 涉及未保存修改先处理保存／放弃／取消。已保存草稿的拆合在同一事务内保存全部结果并移除被替代草稿，成功后才更新界面；失败保留原草稿和当前编辑内容。重复请求复用操作标识，旧页面不能重新写回已经被合并的草稿。
 - 显式保存草稿时持久化正文、来源定位及恢复批次归属所需的数据，不保存原始 PDF／图片。正文确认使用用户最终行边界，课文确认事务保留来源关联；删除草稿或清理来源不得留下悬空依赖。重选原文件须核对匹配，未匹配时仍可编辑正文，不假装来源预览或重新识别可用。
-- 新增持久化的批次、来源及关联字段纳入 JSON schemaVersion、依赖校验和完整恢复。实现时设计格式版本与旧格式兼容策略，覆盖往返、非法关联拒绝、事务回滚和旧写入失效；原始文件不进入 JSON，未保存中间结果不导出。现行实现尚不具备这些新增字段的恢复能力。
+- 来源文件记录稳定标识、名称、字节数、类型和 SHA-256；来源区域记录文件标识、页号、顺序、旋转及旋转后页面上的归一化矩形。草稿与课文关联 batchId、sourceRefs，句子保存对应来源；人工改写正文后采用原来源集合，避免伪造精确对应。
+- 批次、来源及关联字段纳入第 2.8 节的 JSON 版本 2、依赖校验和完整恢复；兼容版本 1。拆合通过 storageVersion、操作标识和已移除标识记录防止重放及迟到写入；原始文件不进入 JSON，未保存中间结果不导出。
