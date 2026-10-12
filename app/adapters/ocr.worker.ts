@@ -77,7 +77,6 @@ self.onmessage = async (event: MessageEvent) => {
           0,
         );
       const resizedWidth = Math.max(1, Math.ceil((48 * width) / height));
-      if (resizedWidth > 3200) throw new Error("文字行过长，请拆分区域。");
       const targetWidth = Math.max(320, resizedWidth);
       const target = new OffscreenCanvas(targetWidth, 48),
         ctx = target.getContext("2d")!;

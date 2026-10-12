@@ -11,12 +11,6 @@ export interface DocumentPage {
   mode: "text" | "ocr";
   regions: Source["rect"][];
 }
-export const fileLimits = (
-  mobile = matchMedia("(max-width: 600px)").matches,
-) =>
-  mobile
-    ? { bytes: 10 * 1024 * 1024, pages: 10, images: 5 }
-    : { bytes: 50 * 1024 * 1024, pages: 50, images: 20 };
 export class LocalDocument {
   batch: FileBatch;
   pages: DocumentPage[] = [];
@@ -26,7 +20,6 @@ export class LocalDocument {
   constructor(
     private files: File[],
     languageId: string,
-    private limit = fileLimits(),
   ) {
     this.batch = {
       id: crypto.randomUUID(),
@@ -41,23 +34,13 @@ export class LocalDocument {
     const isPdf =
       this.files[0].type === "application/pdf" ||
       /\.pdf$/i.test(this.files[0].name);
-    if (
-      !isPdf &&
-      this.files.reduce((sum, f) => sum + f.size, 0) > this.limit.bytes
-    )
-      throw new Error(
-        `所选图片总大小不能超过 ${this.limit.bytes / 1024 / 1024} MB。`,
-      );
     if (isPdf && this.files.length !== 1)
       throw new Error("每批只能选择一个 PDF。");
     if (
       !isPdf &&
-      (this.files.length > this.limit.images ||
-        this.files.some((f) => !/^image\/(png|jpeg|webp)$/.test(f.type)))
+      this.files.some((f) => !/^image\/(png|jpeg|webp)$/.test(f.type))
     )
-      throw new Error(
-        `请选择最多 ${this.limit.images} 张 PNG、JPEG 或 WebP 图片。`,
-      );
+      throw new Error("请选择 PNG、JPEG 或 WebP 图片。");
     signal.addEventListener("abort", () => this.close(), { once: true });
     for (const file of this.files) {
       signal.throwIfAborted();
@@ -97,8 +80,6 @@ export class LocalDocument {
         } catch {
           throw new Error("PDF 无法读取；请检查文件是否损坏、加密或不受支持。");
         }
-        if (this.pdf.numPages > this.limit.pages)
-          throw new Error(`PDF 不能超过 ${this.limit.pages} 页。`);
         for (let page = 1; page <= this.pdf.numPages; page++) {
           signal.throwIfAborted();
           progress(`读取第 ${page} / ${this.pdf.numPages} 页`);
